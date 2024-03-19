@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect
 from flaskblog import app
-from flaskblog.forms import RegistrationForm, LoginForm
+from flaskblog.forms import RegistrationForm, LoginForm, RegistrationRequestForm
 from flaskblog.models import User, Post
 
 posts = [
@@ -48,3 +48,12 @@ def login():
         else:
             flash('فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('login.html', title='تسجيل الدخول', form=form)
+
+
+@app.route('/register_request', methods=['GET', 'POST'])
+def register_request():
+    form = RegistrationRequestForm()
+    if form.validate_on_submit():
+        flash(f' تم ارسال الطلب {form.username.data}!', 'success')
+        return redirect(url_for('home'))
+    return render_template('register_request.html', title= 'فتح حساب منصة اخبارية', form=form)

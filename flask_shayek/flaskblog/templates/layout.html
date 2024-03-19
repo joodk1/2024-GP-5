@@ -19,7 +19,7 @@
     <header class="site-header">
         <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
           <div class="container">
-            <a class="navbar-brand mr-4" href="/">Flask Blog</a>
+            <a class="navbar-brand mr-4" href="/"> <img src="Images/Shayek_logo.PNG" alt="Shayek logo"> </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -32,6 +32,7 @@
               <div class="navbar-nav">
                 <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
                 <a class="nav-item nav-link" href="{{ url_for('register') }}">التسجيل</a>
+                <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب فتح حساب</a>
               </div>
             </div>
           </div>
