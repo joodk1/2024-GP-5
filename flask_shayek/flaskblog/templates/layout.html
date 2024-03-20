@@ -16,57 +16,48 @@
     {% endif %}
 </head>
 <body>
-    <header class="site-header">
-        <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
-          <div class="container">
-            <a class="navbar-brand mr-4" href="/"> <img src="Images/Shayek_logo.PNG" alt="Shayek logo"> </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
-              <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarToggle">
-              <div class="navbar-nav mr-auto">
-                <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
-                <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن</a>
-              </div>
-              <!-- Navbar Right Side -->
-              <div class="navbar-nav">
-                <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
-                <a class="nav-item nav-link" href="{{ url_for('register') }}">التسجيل</a>
-                <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب فتح حساب</a>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </header>
-      <main role="main" class="container">
-        <div class="row">
-          <div class="col-md-8">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{category}}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
-          </div>
-          <div class="col-md-4">
-            <div class="content-section">
-              <h3>Our Sidebar</h3>
-              <p class='text-muted'>You can put any information here you'd like.
-                <ul class="list-group">
-                  <li class="list-group-item list-group-item-light">Latest Posts</li>
-                  <li class="list-group-item list-group-item-light">Announcements</li>
-                  <li class="list-group-item list-group-item-light">Calendars</li>
-                  <li class="list-group-item list-group-item-light">etc</li>
-                </ul>
-              </p>
-            </div>
+  <header class="site-header">
+    <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+      <div class="container d-flex justify-content-between align-items-center">
+        <!-- Navbar Right Side -->
+        <div class="d-flex align-items-center">
+          <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
+          <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب فتح حساب</a>
+        </div>
+  
+        <!-- Toggle Button -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+  
+        <!-- Navbar content for toggling -->
+        <div class="collapse navbar-collapse" id="navbarToggle">
+          <!-- Logo and Navbar Left Side (which is actually the right side in a RTL layout) -->
+          <div class="ml-auto d-flex align-items-center">
+            <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن</a>
+            <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+            <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
           </div>
         </div>
-      </main>
+      </div>
+    </nav>
+  </header>
+    <main role="main" class="container">
+      <div class="row">
+        <div class="col-12">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                  {% for category, message in messages %}
+                      <div class="alert alert-{{category}}">
+                          {{ message }}
+                      </div>
+                  {% endfor %}
+              {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </main>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
