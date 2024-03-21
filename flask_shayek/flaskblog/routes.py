@@ -27,7 +27,8 @@ def home():
 
 @app.route('/about')
 def about():
-    return render_template('about.html', title = 'من نحن')
+    return render_template('about.html', title = '?من نحن')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -56,3 +57,7 @@ def register_request():
         flash(f' تم ارسال الطلب {form.username.data}!', 'success')
         return redirect(url_for('home'))
     return render_template('register_request.html', title= 'فتح حساب منصة اخبارية', form=form)
+
+@app.route('/shayekModel')
+def shayekModel():
+    return render_template('shayekModel.html', title = 'نشيّك ؟')
