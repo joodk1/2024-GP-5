@@ -23,7 +23,6 @@
         <div class="d-flex align-items-center">
           <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
           <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب فتح حساب</a>
-          <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
         </div>
   
         <!-- Toggle Button -->
@@ -35,6 +34,7 @@
         <div class="collapse navbar-collapse" id="navbarToggle">
           <!-- Logo and Navbar Left Side (which is actually the right side in a RTL layout) -->
           <div class="ml-auto d-flex align-items-center">
+            <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
             <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
             <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
             <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
