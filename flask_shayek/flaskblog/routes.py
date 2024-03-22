@@ -98,7 +98,7 @@ def register_request():
             'email': email,
             'company_name': company_name,
             'company_docs_url': file_url,
-            'verified': False,  # Initial verification status
+            'status' : 'under review'
         }
 
         # Save the registration data to Firebase Realtime Database
@@ -151,9 +151,22 @@ def admin_dashboard():
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(401) 
     ref = db.reference('registration_requests')
-    requests = ref.order_by_child('verified').equal_to(False).get()
+    requests = ref.order_by_child('status').equal_to('under review').get()
+    
+    # Convert gs:// URLs to HTTPS URLs
+    for request in requests.values():
+        if 'company_docs_url' in request:
+            gs_url = request['company_docs_url']
+            if gs_url.startswith('gs://'):
+                https_url = gs_url.replace('gs://', 'https://storage.googleapis.com/')
+                request['company_docs_url'] = https_url
+    
     return render_template('admin_dashboard.html', requests=requests)
 
+
+
+
+from flask import redirect, url_for, request
 
 @app.route('/verify_request/<request_id>', methods=['POST'])
 @login_required
@@ -161,7 +174,11 @@ def verify_request(request_id):
     ref_request = db.reference(f'registration_requests/{request_id}')
     request_data = ref_request.get()
     if request_data:
-        ref_request.update({'verified': True})
+        if 'decline' in request.form:
+            ref_request.update({'status': 'declined'})  
+            return redirect(url_for('admin_dashboard'))  
+
+        ref_request.update({'status': 'accepted'})
         user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         user_data = {
             'username': request_data['username'],
@@ -172,10 +189,11 @@ def verify_request(request_id):
         ref_user = db.reference('users').push(user_data)
 
         js_script = f"alert('{user_password} هو: {request_data['email']} الرقم السري للحساب ');"
-
         return f"<script>{js_script}</script><script>window.location.href = '{url_for('admin_dashboard')}';</script>"
     else:
         return "Request data not found."
+
+
 
 @app.route('/admin/logout')
 def admin_logout():
