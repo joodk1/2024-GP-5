@@ -29,8 +29,6 @@ body {
     background-color: white;
   }
 
-
-  
   .site-header .navbar-nav .nav-link, a {
     color: var(--dark-green);
   }
@@ -91,20 +89,23 @@ body {
     font-size: 2.5rem;
   }
 
-  .adminForm {
+  .admin-form {
     display: flex;
     justify-content: flex-end;
   }
 
-  .adminVerify {
-    padding: 2px 10px;
+  .admin-verify, .btn {
     margin: 5px;
+    padding: 2px 10px;
+    color: #333333;
     border-radius: 8px;
     background-color: white;
     border: 2px solid var(--dark-green);
   }
   
-  .adminVerify:hover {
+  .admin-verify:hover, .btn:hover {
     border: 2px solid var(--light-green);
+    background-color: white;
     text-decoration: none;
+    color: #333333;
   }
