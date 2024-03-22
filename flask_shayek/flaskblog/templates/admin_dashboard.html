@@ -1,0 +1,7 @@
+{% for key, request in requests.items() %}
+    <div>{{ request['username'] }} - {{ request['email'] }} - Not Verified
+        <form action="{{ url_for('verify_request', request_id=key) }}" method="post">
+            <button type="submit">تم التحقق</button>
+        </form>
+    </div>
+{% endfor %}

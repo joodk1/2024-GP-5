@@ -1,5 +1,8 @@
 from flask import Flask, session, render_template, redirect, request
 import pyrebase
+from flask_login import LoginManager
+from flask import url_for, session
+
 
 app = Flask(__name__)
 config = {
@@ -17,4 +20,6 @@ config = {
 firebase = pyrebase.initialize_app(config)
 auth= firebase.auth()
 app.config['SECRET_KEY'] = '44a724aea84a985aa8cec3f8c316cf2e'
+login_manager = LoginManager()
+login_manager.init_app(app)
 from flaskblog import routes
