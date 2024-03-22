@@ -7,10 +7,11 @@
         <p><strong>البريد الالكتروني:</strong> {{ request['email'] }}</p>
         <p><strong>اسم المنصة:</strong> {{ request['company_name'] }}</p>
         <p><strong>الملفات المرفقة:</strong> <a href="{{ request['company_docs_url'] }}" target="_blank">Download</a></p>
-        <form action="{{ url_for('verify_request', request_id=key) }}" method="post">
-            <button type="submit">قبول</button>
-            <button type="submit" name="decline" value="true">رفض</button>
+        <form action="{{ url_for('verify_request', request_id=key) }}" method="post" class="adminForm">
+            <button type="submit" name="decline" value="true" class="adminVerify">رفض</button>
+            <button type="submit" class="adminVerify">قبول</button>
         </form>
+        <hr>
     </div>
     {% endfor %}
 </div>

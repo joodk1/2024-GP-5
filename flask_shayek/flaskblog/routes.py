@@ -14,7 +14,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('C:/Users/huaweii/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'

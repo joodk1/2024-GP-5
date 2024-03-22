@@ -1,4 +1,9 @@
 
+:root { 
+  --dark-green: #0c5e22; 
+  --light-green: #7fc284; 
+} 
+
 body {
     background: #fafafa;
     color: #333333;
@@ -21,17 +26,17 @@ body {
   }
   
   .bg-steel {
-    background-color: #ffffff;
+    background-color: white;
   }
 
 
   
   .site-header .navbar-nav .nav-link, a {
-    color: #0c5e22;
+    color: var(--dark-green);
   }
   
   .site-header .navbar-nav .nav-link:hover, a:hover {
-    color: #7fc284;
+    color: var(--light-green);
   }
   
   .site-header .navbar-nav .nav-link.active {
@@ -39,7 +44,7 @@ body {
   }
   
   .content-section {
-    background: #ffffff;
+    background: white;
     padding: 10px 10px;
     border: 1px solid #dddddd;
     border-radius: 3px;
@@ -51,7 +56,7 @@ body {
   }
   
   a.article-title:hover {
-    color: #7fc284;
+    color: var(--light-green);
     text-decoration: none;
   }
   
@@ -72,7 +77,7 @@ body {
   }
   
   .article-metadata a:hover {
-    color: #7fc284;
+    color: var(--light-green);
     text-decoration: none;
   }
   
@@ -82,14 +87,24 @@ body {
     vertical-align: middle;
   }
   
-  /*.account-img {
-    height: 125px;
-    width: 125px;
-    margin-right: 20px;
-    margin-bottom: 16px;
-  }*/
-  
   .account-heading {
     font-size: 2.5rem;
   }
+
+  .adminForm {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .adminVerify {
+    padding: 2px 10px;
+    margin: 5px;
+    border-radius: 8px;
+    background-color: white;
+    border: 2px solid var(--dark-green);
+  }
   
+  .adminVerify:hover {
+    border: 2px solid var(--light-green);
+    text-decoration: none;
+  }
