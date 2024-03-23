@@ -62,8 +62,6 @@ import os
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        email = form.email.data
-        password = form.password.data
         api_key = os.environ.get('SHAYEK_API')
         request_payload = {
             "email": form.email.data,
@@ -73,7 +71,6 @@ def login():
         try:
             response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
             response.raise_for_status() 
-            user_data = response.json()
             session['logged_in'] = True
             session['role'] = 'user'
             flash('تم تسجيل دخولك بنجاح', 'success')
