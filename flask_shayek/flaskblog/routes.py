@@ -14,7 +14,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('C:/Users/huaweii/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -60,20 +60,27 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        if form.email.data == 'admin@shayek.com' and form.password.data == 'password':
+        try:
+            user = firebase_auth.sign_in_with_email_and_password(form.email.data, form.password.data)
             flash('تم تسجيل دخولك بنجاح', 'success')
             return redirect(url_for('home'))
-        else:
+        except Exception as e:
             flash('فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
+            print(e)  # Handle error gracefully, log it, or display it to the user
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
 def upload_file_to_firebase_storage(file):
     if file:
+        # Ensure the filename is secure
         filename = secure_filename(file.filename)
+        # Create a reference to the upload path
         bucket = storage.bucket()
         blob = bucket.blob(f"company_docs/{filename}")
+        # Upload the file
         blob.upload_from_string(file.read(), content_type=file.content_type)
+        # Make the blob publicly viewable
         blob.make_public()
+        # Return the gs:// URL
         return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
 
 @app.route('/register_request', methods=['GET', 'POST'])
