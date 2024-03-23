@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 from flask import current_app as app
-from flask import render_template, url_for, flash, redirect, request, Flask, session
+from flask import render_template, url_for, flash, redirect, request, Flask, session ,jsonify
 from flaskblog import app, firebase
 from flaskblog.forms import RegistrationForm, LoginForm, RegistrationRequestForm
 from werkzeug.utils import secure_filename
@@ -12,6 +12,7 @@ from flask_login import login_user, current_user, logout_user, login_required, U
 from flaskblog import app, login_manager
 import random
 import string
+from firebase_admin import credentials, auth
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate('/Users/noraaziz/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -56,17 +57,32 @@ def register():
         return redirect(url_for('home'))
     return render_template('register.html', title='استمارة التسجيل', form=form)
 
+import requests
+from flask import jsonify
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        request_payload = {
+            "email": form.email.data,
+            "password": form.password.data,
+            "returnSecureToken": True
+        }
         try:
-            user = firebase_auth.sign_in_with_email_and_password(form.email.data, form.password.data)
+            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
+            response.raise_for_status()  # This will raise an exception for HTTP error responses
+            user_data = response.json()
+            # Here, you could set user data in Flask's session or whatever your app requires
             flash('تم تسجيل دخولك بنجاح', 'success')
             return redirect(url_for('home'))
-        except Exception as e:
-            flash('فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
-            print(e)  # Handle error gracefully, log it, or display it to the user
+        except requests.exceptions.HTTPError as e:
+            error_json = e.response.json()
+            error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
+            flash(f'فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور. Error: {error_message}', 'danger')
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
 def upload_file_to_firebase_storage(file):
@@ -171,22 +187,41 @@ def verify_request(request_id):
     if request_data:
         if 'decline' in request.form:
             ref_request.update({'status': 'declined'})  
-            return redirect(url_for('admin_dashboard'))  
-
-        ref_request.update({'status': 'accepted'})
-        user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-        user_data = {
+            return redirect(url_for('admin_dashboard'))
+       
+        try:
+            # Admin accepts the request - create user in Firebase Authentication
+            user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            new_user = auth.create_user(
+                email=request_data['email'],
+                password=user_password,  # Ensure this password is securely generated or collected
+            )
+            user_data ={
             'username': request_data['username'],
             'email': request_data['email'],
             'password': user_password,
-            'posts': {}  
-        }
-        ref_user = db.reference('users').push(user_data)
+            'posts': {} }
+            
+            ref_user = db.reference('users').push(user_data)
+            
+            # Update the request status in your database
+            ref_request.update({'status': 'accepted', 'uid': new_user.uid})
+            
+            flash('Registration request accepted and user created.', 'success')
+            js_script = f"alert('{user_password} هو: {request_data['email']} الرقم السري للحساب ');"
+            return f"<script>{js_script}</script><script>window.location.href = '{url_for('admin_dashboard')}';</script>"
+        
+        except Exception as e:
+            # Handle potential errors, such as email already exists
+            flash(f'Error creating user: {str(e)}', 'danger')
+            # It's important to return here to prevent further execution which might rely on new_user being successfully created
+            return redirect(url_for('admin_dashboard'))
 
-        js_script = f"alert('{user_password} هو: {request_data['email']} الرقم السري للحساب ');"
-        return f"<script>{js_script}</script><script>window.location.href = '{url_for('admin_dashboard')}';</script>"
+        return redirect(url_for('admin_dashboard'))
     else:
-        return "Request data not found."
+        flash('Request data not found.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
 
 
 @app.route('/admin/logout')
