@@ -14,7 +14,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/noraaziz/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('C:/Users/huaweii/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -45,7 +45,7 @@ def home():
 
 @app.route('/about')
 def about():
-    return render_template('about.html', title = '؟من نحن')
+    return render_template('about.html', title = 'من نحن؟')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -69,30 +69,23 @@ def login():
 
 def upload_file_to_firebase_storage(file):
     if file:
-        # Ensure the filename is secure
         filename = secure_filename(file.filename)
-        # Create a reference to the upload path
         bucket = storage.bucket()
         blob = bucket.blob(f"company_docs/{filename}")
-        # Upload the file
         blob.upload_from_string(file.read(), content_type=file.content_type)
-        # Make the blob publicly viewable
         blob.make_public()
-        # Return the gs:// URL
         return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
 
 @app.route('/register_request', methods=['GET', 'POST'])
 def register_request():
     form = RegistrationRequestForm()
     if form.validate_on_submit():
-        # Process form data
         username = form.username.data
         email = form.email.data
         company_name = form.company_name.data
         company_docs = request.files.get('company_docs')
         file_url = upload_file_to_firebase_storage(company_docs)
 
-        # Prepare the data for Firebase, including the file path
         registration_data = {
             'username': username,
             'email': email,
@@ -101,13 +94,12 @@ def register_request():
             'status' : 'under review'
         }
 
-        # Save the registration data to Firebase Realtime Database
         db.reference('registration_requests').push(registration_data)
 
         flash('Your request has been submitted successfully!', 'success')
         return redirect(url_for('home'))
     else:
-        return render_template('register_request.html', title='Register Request', form=form)
+        return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
 
 
 @app.route('/shayekModel')
@@ -143,8 +135,6 @@ def admin_login():
     return render_template('admin_login.html')
 
 
-
-
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
@@ -153,7 +143,6 @@ def admin_dashboard():
     ref = db.reference('registration_requests')
     requests = ref.order_by_child('status').equal_to('under review').get()
     
-    # Convert gs:// URLs to HTTPS URLs
     for request in requests.values():
         if 'company_docs_url' in request:
             gs_url = request['company_docs_url']
@@ -162,7 +151,6 @@ def admin_dashboard():
                 request['company_docs_url'] = https_url
     
     return render_template('admin_dashboard.html', requests=requests)
-
 
 
 
@@ -192,7 +180,6 @@ def verify_request(request_id):
         return f"<script>{js_script}</script><script>window.location.href = '{url_for('admin_dashboard')}';</script>"
     else:
         return "Request data not found."
-
 
 
 @app.route('/admin/logout')

@@ -7,8 +7,7 @@
 } 
 
 body {
-  font-family: 'Droid Arabic Kufi', serif; /* Added font-family */
- 
+    font-family: 'Droid Arabic Kufi', serif;
     background: #fafafa;
     color: #333333;
     margin-top: 5rem;
@@ -55,8 +54,7 @@ body {
   
   .article-title {
     color: #444444;
-    font-size: 28px; 
-
+    margin: 4px;
   }
   
   a.article-title:hover {
@@ -66,6 +64,7 @@ body {
   
   .article-content {
     white-space: pre-line;
+    margin: 5px;
   }
   
   .article-img {
