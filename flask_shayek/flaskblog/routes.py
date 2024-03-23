@@ -12,7 +12,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('C:/Users/huaweii/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -56,6 +56,7 @@ def register():
 
 import requests
 from flask import jsonify
+import os
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -63,7 +64,7 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        api_key = os.environ.get('SHAYEK_API')
         request_payload = {
             "email": form.email.data,
             "password": form.password.data,
