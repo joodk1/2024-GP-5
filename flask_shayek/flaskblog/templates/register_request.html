@@ -1,5 +1,16 @@
 {% extends "layout.html" %}
+@import url(https://fonts.googleapis.com/earlyaccess/droidarabickufi.css);
 {% block content %}
+<head>
+  <script>
+    function updateFileName(input) {
+    var fileName = input.files[0].name;
+    var label = input.nextElementSibling;
+    label.innerText = fileName;
+}
+  </script>
+ 
+</head>
   <div class="content-section text-right">
     <form method="POST" action="" enctype="multipart/form-data" class="user-forms">
       {{ form.hidden_tag() }}
@@ -45,19 +56,19 @@
           {% endif %}
         </div>
         <div class="form-group">
-          <div class="custom-file">
+          <div class="custom-file" style="text-align: left; font-family:'Droid Arabic Kufi', serif;">
               {{ form.company_docs.label(class="custom-file-label form-control-label", caption="ارفاق ملف") }}
               {% if form.company_docs.errors %}
-                  <input type="file" class="custom-file-input is-invalid text-left" id="customFile" name="company_docs" caption="ارفق ملف">
-                  <label class="custom-file-label text-left" for="customFile">رفع ملف وثائق المنصة</label>
+                   <input type="file" class="custom-file-input" id="customFile" name="company_docs" onchange="updateFileName(this)">
+                   <label class="custom-file-label" for="customFile">اختر ملف</label>
                   <div class="invalid-feedback">
                       {% for error in form.company_docs.errors %}
                           <span>{{ error }}</span>
                       {% endfor %}
                   </div>
               {% else %}
-                  <input type="file" class="custom-file-input text-left" id="customFile" name="company_docs" caption="ارفق ملف">
-                  <label class="custom-file-label text-left" for="customFile">رفع ملف وثائق المنصة</label>
+                  <input type="file" class="custom-file-input" id="customFile" name="company_docs" onchange="updateFileName(this)">
+                  <label class="custom-file-label" for="customFile">اختر ملف</label>
               {% endif %}
           </div>
       </div>
