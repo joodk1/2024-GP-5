@@ -2,16 +2,16 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-6">
-            <div class="account-info">
-                <h4>Account:</h4>
-                <p>Username: {{ user_info.get('username') }}</p>
-                <p>Email: {{ user_info.get('email') }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="row">
         <div class="col-md-12">
+            <div class="content-section">
+                <div class="media-body">
+                    <div class="article-metadata">
+                        <h4>معلومات المستخدم</h4>
+                        <p>اسم المستخدم: {{ user_info.get('username') }}</p>
+                        <p>البريد الإلكتروني: {{ user_info.get('email') }}</p>
+                    </div>
+                </div>
+            </div>
             <div class="posts-section">
                 {% for post in posts %}
                 <article class="media content-section">
@@ -19,7 +19,7 @@
                         <div class="article-metadata">
                             <a class="mr-2" href="#">{{ post.author }}</a>
                             <small class="text-muted">{{ post.date_posted }}</small>
-                        </div> 
+                        </div>
                         <br>
                         <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
                         <p class="article-content">{{ post.content }} <a href="#">لقراءة المزيد</a></p>

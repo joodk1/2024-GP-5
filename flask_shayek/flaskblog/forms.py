@@ -20,7 +20,7 @@ class RegistrationRequestForm(FlaskForm):
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
     company_name = StringField('اسم المنصة', validators=[DataRequired()])
     company_docs = FileField('وثائق المنصة', validators=[DataRequired()])
-    verified = BooleanField('تم التحقق', default=False)  # Initially set to False
+    verified = BooleanField('تم التحقق', default=False)
     submit = SubmitField('طلب فتح حساب')
 
     def toggle_verified_visibility(self):
