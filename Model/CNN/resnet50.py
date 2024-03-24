@@ -101,11 +101,20 @@ test_loss, test_accuracy = model.evaluate(test_gen)
 print(f"Test Loss: {test_loss}, Test Accuracy: {test_accuracy}")
 
 # Plot training and validation accuracy
-plt.plot(history.history['accuracy'], label='Training Accuracy', color='green', linestyle='-', marker='o')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='darkgreen', linestyle='--', marker='x')
+plt.plot(history.history['accuracy'], label='Training Accuracy', color='darkgreen', linestyle='-', marker='o')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='limegreen', linestyle='--', marker='x')
 plt.title('Training and Validation Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+# Plot training and validation loss
+plt.plot(history.history['loss'], label='Training Loss', color='darkgreen', linestyle='-', marker='o')
+plt.plot(history.history['val_loss'], label='Validation Loss', color='limegreen', linestyle='--', marker='x')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
 plt.legend()
 plt.show()
 
@@ -123,56 +132,6 @@ print(classification_report(true_labels, predictions))
 # Confusion matrix
 conf_matrix = confusion_matrix(true_labels, predictions)
 plt.figure(figsize=(8, 6))
-sns.heatmap(conf_matrix, annot=True, fmt="d", cmap='Greens')
-plt.xlabel('Predicted Label')
-plt.ylabel('True Label')
-plt.title('Confusion Matrix')
-plt.show()
-
-# Save the model
-model.save("/content/drive/MyDrive/Dataset/Models/ResNet50_Model.h5")
-
-model.save("/content/drive/MyDrive/Models/ResNet50_Model_Web2.h5", save_format='h5')
-
-# Plot training and validation accuracy
-plt.plot(history.history['accuracy'], label='Training Accuracy', color='limegreen', linestyle='-', marker='o')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='darkgreen', linestyle='--', marker='x')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
-# Plot training and validation accuracy
-plt.plot(history.history['accuracy'], label='Training Accuracy', color='darkgreen', linestyle='-', marker='o')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy', color='limegreen', linestyle='--', marker='x')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
-# Plot training and validation loss
-plt.plot(history.history['loss'], label='Training Loss', color='darkred', linestyle='-', marker='o')
-plt.plot(history.history['val_loss'], label='Validation Loss', color='salmon', linestyle='--', marker='x')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
-
-# Plot training and validation loss
-plt.plot(history.history['loss'], label='Training Loss', color='darkgreen', linestyle='-', marker='o')
-plt.plot(history.history['val_loss'], label='Validation Loss', color='limegreen', linestyle='--', marker='x')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
-
-# Confusion matrix
-conf_matrix = confusion_matrix(true_labels, predictions)
-plt.figure(figsize=(8, 6))
 sns.heatmap(conf_matrix, annot=True, fmt="d", cmap='Greens',
             xticklabels=['Authentic', 'Manipulated'],
             yticklabels=['Authentic', 'Manipulated'])
@@ -180,3 +139,6 @@ plt.xlabel('Predicted Label')
 plt.ylabel('True Label')
 plt.title('Confusion Matrix')
 plt.show()
+
+# Save the model
+model.save("/content/drive/MyDrive/Models/ResNet50_Model_Web2.h5", save_format='h5')

@@ -16,6 +16,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Flatten, Dense
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import classification_report, confusion_matrix
+
 
 class VideoDataGenerator(Sequence):
     def __init__(self, video_paths, labels, num_frames, height, width, batch_size=32, shuffle=True):
@@ -157,8 +159,6 @@ test_gen = VideoDataGenerator(test_video_paths, test_labels, num_frames, height,
 y_pred = model.predict(test_gen)
 y_pred_binary = (y_pred > 0.5).astype(int).reshape(-1)  # Adjust based on your model's output layer and activation
 
-# Assuming you're doing binary classification and test_labels is a 1D array with binary labels
-from sklearn.metrics import classification_report, confusion_matrix
 
 # Generate classification report
 print(classification_report(test_labels, y_pred_binary))
