@@ -12,7 +12,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -41,6 +41,20 @@ def home():
     return render_template('home.html', posts=posts)
 
 
+@app.route('/user/home')
+def user_home():
+    user_info = session.get('user_info')
+
+    if user_info:
+        
+        return render_template('user_home.html', posts=posts, user_info=user_info)
+    else:
+
+
+        flash('يرجى تسجيل الدخول أولاً', 'danger')
+        return redirect(url_for('login'))
+
+
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
@@ -58,24 +72,11 @@ import requests
 from flask import jsonify
 import os
 
-
-def determine_user_role(email):
-    users_ref = db.reference('users')
-    users_query_result = users_ref.order_by_child('email').equal_to(email).get()
-    if users_query_result:
-        return 'user'
-    admins_ref = db.reference('admins')
-    admins_query_result = admins_ref.order_by_child('email').equal_to(email).get()
-    if admins_query_result:
-        return 'admin'
-    return None  
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        api_key = 'AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY'
+        api_key = os.environ.get('SHAYEK_API')
         request_payload = {
             "email": form.email.data,
             "password": form.password.data,
@@ -105,7 +106,14 @@ def login():
             flash(f'فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور. Error: {error_message}', 'danger')
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
-
+def fetch_username_from_database(email):
+    # Assuming you're using Firebase Realtime Database or Firestore
+    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
+    if user_ref:
+        user_data = next(iter(user_ref.values()))
+        return user_data.get('username', None)
+    else:
+        return None
 
 def upload_file_to_firebase_storage(file):
     if file:
