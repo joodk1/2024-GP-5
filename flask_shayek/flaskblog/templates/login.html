@@ -19,7 +19,6 @@
                         {{ form.email(class="form-control form-control-lg text-right") }}      
                     {% endif %}
                 </div>
-                
                 <div class="form-group">
                     {{ form.password.label(class="form-control-label") }}
                 
@@ -33,19 +32,11 @@
                     {% else %}  
                         {{ form.password(class="form-control form-control-lg text-right") }}      
                     {% endif %}
-                </div>  
-                <div class="form-check">
-                    {{ form.remember(class="form-check-input") }}
-                    {{ form.remember.label(class="form-check-label") }}
-                </div>             
+                </div>              
             </fieldset>
             <div class="z">
                 {{ form.submit(class="btn btn-outline-info") }}
             </div>
-            <small class="text-muted">
-                <a class="ml-2" href="#link forg pass">نسيت كلمة المرور؟</a>
-            </small>
         </form>
     </div>
-    
 {% endblock content %}
