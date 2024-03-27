@@ -113,3 +113,17 @@ body {
     text-decoration: none;
     color: white;
   }
+
+
+  .flash-message {
+    background-color: #ffffcc; 
+    border: 1px solid #cccccc; 
+    padding: 10px; 
+    margin-bottom: 20px; 
+}
+
+.icon {
+    font-size: 20px; 
+    color: red; 
+    margin-right: 5px; 
+}

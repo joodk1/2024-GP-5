@@ -56,19 +56,33 @@
           {% endif %}
         </div>
         <div class="form-group">
+          <div class="flash-message">
+            <div class="disclaimer">
+                <span class="icon">!تنبية</span>
+                <p>يرجى إرفاق الوثائق المطلوبة لتسجيل المؤسسة وهي: <br> 
+                  <ul style="direction: rtl;">
+                      <li>معلومات الترخيص الإعلامي (رقم الترخيص، تاريخ الإصدار، تاريخ الانتهاء)</li>
+                      <li>معلومات المتقدم بالطلب (الاسم، رقم الهوية، المنصب في المؤسسة)</li>
+                      <li>ختم الموافقة على طلب فتح الحساب، وتوقيع صاحب صلاحية في المؤسسة</li>
+                      <li>معلومات التواصل</li>
+                  </ul>
+                  .سيتم مراجعة طلبكم، وفي حال استيفاء الشروط، سيتم إرسال رسالة عبر البريد الإلكتروني بمعلومات الحساب
+              </p>
+            </div>
+        </div>
           <div class="custom-file" style="text-align: left; font-family:'Droid Arabic Kufi', serif;">
               {{ form.company_docs.label(class="custom-file-label form-control-label", caption="ارفاق ملف") }}
-              {% if form.company_docs.errors %}
+              {% if form.company_docs.errors %}          
                    <input type="file" class="custom-file-input" id="customFile" name="company_docs" onchange="updateFileName(this)">
-                   <label class="custom-file-label" for="customFile">اختر ملف</label>
+                   <label class="custom-file-label" for="customFile">رفع ملف وثائق المنصة</label>
                   <div class="invalid-feedback">
                       {% for error in form.company_docs.errors %}
                           <span>{{ error }}</span>
                       {% endfor %}
                   </div>
-              {% else %}
+              {% else %}          
                   <input type="file" class="custom-file-input" id="customFile" name="company_docs" onchange="updateFileName(this)">
-                  <label class="custom-file-label" for="customFile">اختر ملف</label>
+                  <label class="custom-file-label" for="customFile">رفع ملف وثائق المنصة</label>
               {% endif %}
           </div>
       </div>
