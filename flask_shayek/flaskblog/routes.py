@@ -12,7 +12,7 @@ import random
 import string
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -56,6 +56,8 @@ def about():
     return render_template('about.html', title = 'من نحن؟')
 
 
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -96,7 +98,7 @@ def login():
             email = form.email.data
             user_role = determine_user_role(email)
             session['logged_in'] = True
-            session['role'] = user_role  # Set role based on user_role
+            session['role'] = user_role
             if user_role == 'user':
                 username = fetch_username_from_database(email)
                 session['user_info'] = {'email': email, 'username': username}
@@ -224,6 +226,21 @@ def admin_dashboard():
 
 from flask import redirect, url_for, request
     
+
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USERNAME'] = 'shayekgp1@gmail.com'
+app.config['MAIL_PASSWORD'] = 'ymujhammpqswenzl'
+app.config['MAIL_DEFAULT_SENDER'] = 'shayekgp1@gmail.com'
+
+from flask_mail import Mail, Message
+mail = Mail(app)
+
+
+
 @app.route('/verify_request/<request_id>', methods=['POST'])
 def verify_request(request_id):
     if 'logged_in' in session and session['role'] == 'admin':
@@ -231,8 +248,13 @@ def verify_request(request_id):
         request_data = ref_request.get()
 
         if request_data:
+            email = request_data['email']
+            subject = ""
+            body = ""
             if 'decline' in request.form:
                 ref_request.update({'status': 'declined'})
+                subject = "رفض طلب تسجيل في منصة شيّــك"
+                body = "عزيزنا/عزيزتنا  {},\n\nتأسف لإخباركم أنه لم يتم قبول طلبكم في التسجيل مع شيّــك، الرجاء مراجعة الملف المرفق والتأكد من اكتمال المتطلبات وصحتها.".format(request_data['username'])
                 flash('<i class="fas fa-check-circle me-3"></i> تم رفض الطلب بنجاح', 'info')
             else:
                 try:
@@ -248,14 +270,18 @@ def verify_request(request_id):
                     'posts': {} }
                     
                     ref_user = db.reference('users').push(user_data)
-                    
                     ref_request.update({'status': 'accepted', 'uid': new_user.uid})                    
+                    subject = "تم قبول طلب تسجيلك مع شيّــك"
+                    body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
+
                     flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
-                    js_script = f"alert('{user_password} هو: {request_data['email']} الرقم السري للحساب ');"
-                    return f"<script>{js_script}</script><script>window.location.href = '{url_for('admin_dashboard')}';</script>"
+                    return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
                 except Exception as e:
                     flash(f'<i class="fas fa-times-circle me-3"></i> Error handling the request: {str(e)}', 'danger')
                     user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            # Send the email
+            msg = Message(subject, recipients=[email], body=body)
+            mail.send(msg)
 
             return redirect(url_for('admin_dashboard'))
         else:

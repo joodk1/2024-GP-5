@@ -18,6 +18,8 @@ class LoginForm(FlaskForm):
 class RegistrationRequestForm(FlaskForm):
     username = StringField('اسم المستخدم', validators=[DataRequired()])
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
+    password = PasswordField('كلمة المرور', validators=[DataRequired()])
+    confirmPassword = PasswordField('تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password')])
     company_name = StringField('اسم المنصة', validators=[DataRequired()])
     company_docs = FileField('وثائق المنصة', validators=[DataRequired()])
     verified = BooleanField('تم التحقق', default=False)
