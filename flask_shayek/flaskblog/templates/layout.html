@@ -42,7 +42,11 @@
         <div class="ml-auto d-flex align-items-center">
           <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
           <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
-          <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+          {% if session['logged_in'] == True %}
+            <a class="nav-item nav-link" href="{{ url_for('user_home') }}">الرئيسية</a>
+          {% else %}
+            <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+          {% endif %}
           <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
         </div>
       </div>

@@ -9,7 +9,25 @@
                 </div> 
                 <br>
                 <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                <p class="article-content">{{ post.content }} <a href="#">لقراءة المزيد</a></p>
+                <p class="article-content">{{ post.content }}
+                    {% if post.media %}
+                    {% set file_ext = post.media.split('.')[-1].lower() %}
+                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                        <video controls>
+                            {% if file_ext == 'mp4' %}
+                                <source src="{{ post.media }}" type="video/mp4">
+                            {% elif file_ext == 'webm' %}
+                                <source src="{{ post.media }}" type="video/webm">
+                            {% elif file_ext == 'ogg' %}
+                                <source src="{{ post.media }}" type="video/ogg">
+                            {% elif file_ext == 'mov' %}
+                                <source src="{{ post.media }}" type="video/quicktime">
+                            {% endif %}
+                        </video>
+                    {% else %}
+                        <img src="{{ post.media }}" alt="الوسائط">
+                    {% endif %}
+                {% endif %}
             </div>
         </article>
     {% endfor %}

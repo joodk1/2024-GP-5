@@ -32,34 +32,40 @@ detector = dlib.get_frontal_face_detector()
 model_path = r'C:\Users\huaweii\Downloads\ResNet50_Model_Web.h5'
 model = load_model(model_path)
 
-posts = [
-    {
-        'author': 'صحيفة مكة',
-        'title': 'الأميرة ساره بنت مساعد تكرم الفائزات بجائزة سيدة الباحة',
-        'content': 'رعت صاحبة السمو الملكي الأميرة سارة بنت مساعد بن عبدالعزيز حرم سمو أمير منطقة الباحة، بمركز الحسام للمعارض والمؤتمرات، حفل تكريم الفائزات بجائزة “سيدة الباحة” في نسختها الأولى والتي تعد إحدى مبادرات فرع وزارة الموارد البشرية والتنمية الاجتماعية بمنطقة الباحة لتمكين المرأة والإحتفاء بالسيدات المتميزات.',
-        'date_posted': 'Mar 20, 2024'
-
-    },
-    {
-        'author': 'جريدة الرياض',
-        'title': 'مجلس الوزراء: 27 من مارس يوماً رسمياً لـ السعودية الخضراء',
-        'content': 'رأس خادم الحرمين الشريفين الملك سلمان بن عبدالعزيز آل سعود ـ حفظه الله ـ، الجلسة التي عقدها مجلس الوزراء، الثلاثاء، في جدة.',
-        'date_posted': 'Mar 20, 2024'
-
-    }
-]
+def fetch_posts():
+    posts_ref = db.reference('posts')
+    posts_snapshot = posts_ref.get()
+    posts = []
+    for post_id, post_data in posts_snapshot.items():
+        posts.append({
+            'author': post_data.get('author'),
+            'title': post_data.get('title'),
+            'content': post_data.get('body'),
+            'media': post_data.get('media_url')
+        })
+    return posts
+posts = fetch_posts()
 
 @app.route('/')
 @app.route('/homepage')
 def home():
+    posts = fetch_posts()
     return render_template('home.html', posts=posts)
 
 
 @app.route('/user/home')
+@login_required
 def user_home():
-    user_info = session.get('user_info')
-    if user_info:      
-        return render_template('user_home.html', posts=posts, user_info=user_info)
+    user_id = session['user_email'] 
+    if user_id:
+        user = load_user(user_id) 
+        if user:
+            login_user(user) 
+            posts = fetch_posts() 
+            return render_template('user_home.html', posts=posts, user=user)
+        else:
+            flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
+            return redirect(url_for('login'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('login'))
@@ -94,22 +100,30 @@ def login():
             response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
             response.raise_for_status()
             user_info = response.json()
-            email = form.email.data
-            user_role = determine_user_role(email)
-            session['logged_in'] = True
-            session['role'] = user_role
-            if user_role == 'user':
-                username = fetch_username_from_database(email)
-                session['user_info'] = {'email': email, 'username': username}
-                flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
-                return redirect(url_for('user_home'))
+            user_email= user_info['email']
+            user_id= user_info['localId']
+            if user_email:
+                user = load_user(user_email) 
+                if user:
+                    login_user(user)  
+                    session['user_email'] = user_info['email']
+                    session['logged_in'] = True
+                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    return redirect(url_for('user_home'))
+                else:
+                    flash('<i class="fas fa-times-circle me-3"></i> User not found.', 'danger')
             else:
-                flash('<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
-
+                flash('<i class="fas fa-times-circle me-3"></i> No user ID found in response.', 'danger')
         except requests.exceptions.HTTPError as e:
-            error_json = e.response.json()
-            error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
-            flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
+            try:
+                error_json = e.response.json()
+                error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
+            except ValueError:
+                error_message = "Failed to decode JSON error message."
+            flash(f'<i class="fas fa-times-circle me-3"></i> {error_message}', 'danger')
+        except ValueError:
+            flash('<i class="fas fa-times-circle me-3"></i> Invalid response from authentication service.', 'danger')
+
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
 @app.route('/adsecretlogin', methods=['GET', 'POST'])
@@ -263,15 +277,32 @@ def upload_video():
 
 
 @login_manager.user_loader
-def load_user(user_id):
-    if user_id == 'admin':
-        return User(user_id)
+def load_user(email):
+    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+    if user_ref:
+        user_data = next(iter(user_ref.values()), None)
+        if user_data:
+            user_data.pop('email', None)  
+            return User(email=email, **user_data)
     return None
 
 class User(UserMixin):
-    def __init__(self, user_id):
-        self.id = user_id
-        self.is_admin = True if user_id == 'admin' else False 
+    def __init__(self, email, username=None, is_active=True, **kwargs):
+        self.id = email
+        self.email = email
+        self.username = username or kwargs.get('username')
+        self.is_active = is_active
+
+    @property
+    def is_active(self):
+        return self._is_active
+
+    @is_active.setter
+    def is_active(self, value):
+        self._is_active = value
+
+    def get_id(self):
+        return self.id 
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -331,7 +362,6 @@ def verify_request(request_id):
                 subject = "تم قبول طلب تسجيلكم في منصة شيّــك"
                 body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
                 flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
-            # Send the email
             msg = Message(subject, recipients=[email], body=body)
             mail.send(msg)
             
@@ -343,6 +373,40 @@ def verify_request(request_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('login'))
 
+@app.route('/submit_post', methods=['POST'])
+@login_required
+def submit_post():
+    user_id = current_user.get_id()  
+    if not user_id:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('login'))
+
+    title = request.form['title']
+    body = request.form['body']
+    media = request.files.get('media') 
+
+    bucket = storage.bucket()
+
+    media_url = None
+    if media and media.filename:
+        filename = secure_filename(media.filename)
+        blob = bucket.blob(f'posts/{user_id}/{filename}')
+        blob.upload_from_file(media.stream, content_type=media.content_type)
+        blob.make_public()
+        media_url = blob.public_url
+
+    post_data = {
+        'title': title,
+        'body': body,
+        'media_url': media_url,
+        'user_id': user_id,
+        'timestamp': {'_seconds': None, '_nanoseconds': None}
+    }
+
+    db.reference(f'posts').push(post_data)
+
+    flash('<i class="fas fa-check-circle me-3"></i> تم إضافة النشرة بنجاح', 'success')
+    return redirect(url_for('user_home'))
 
 @app.route('/admin/logout')
 @app.route('/logout')

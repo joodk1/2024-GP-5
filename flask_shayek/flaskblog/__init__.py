@@ -3,7 +3,6 @@ import pyrebase
 from flask_login import LoginManager
 from flask import url_for, session
 
-
 app = Flask(__name__)
 config = {
     "apiKey": "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
@@ -15,7 +14,6 @@ config = {
     "appId": "1:377837381829:web:d6594a9e9f6af83c1468ac",
     "measurementId": "G-PKCVFN45WE"
   }
-
 
 firebase = pyrebase.initialize_app(config)
 auth= firebase.auth()
