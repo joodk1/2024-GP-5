@@ -1,23 +1,86 @@
 {% extends "layout.html" %}
 {% block content %}
+
+
 <div class="container-fluid my-3">
     <div class="row justify-content-center">
       <div class="col-12">
         <div class="card">
           <div class="card-body">
-            <h2 class="card-title">قريبـــــــــاً </h2>
+            <h2 class="card-title">نشيّك؟ </h2>
           <hr>
             <img src="/static/Images/model soon2.png" alt="Banner Image" style="max-width: 100%; height: auto;">
-            <hr>
-            <p class="card-text">
+            <hr>             
+            <h3 class="text-center">رفع الفيديو</h3>
+            <br>
 
-                  أحدث تقنيات الذكاء الاصطناعي للتحقق من الفيديوهات <br>
-                  المعرضة للفبركة والتعديل نقدمها لكم قريباً.
-              
-              </p>              
+            <form id="videoForm" action="/shayekModel" method="post" enctype="multipart/form-data">
+              <input type="file" name="video" accept="video/*" required>
+              <button type="submit" class="btn btn-primary">تحقق من الفيديو</button>
+          </form>
+          <!-- Progress Bar with Blinking Indicator -->
+          <div id="loadingIndicator" style="display: none; width: 100%; border: 1px solid black; padding: 2px; margin-top: 10px;">
+            <div id="blinkingBar" style="width: 100%; height: 20px; background-color: rgb(10, 128, 47);"></div>
           </div>
+
+          <style>
+          @keyframes blinker {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+
+          #blinkingBar {
+            animation: blinker 1s linear infinite;
+          }
+          #result {
+              font-weight: bold;
+              font-style: italic;
+              color: green;
+              background-color: #ffffff;
+              border-radius: 5px;
+              margin-top: 10px;
+            }
+          </style>
+          <span id="result" style="margin-left: 2px;"></span>
+      
+<script>
+  document.getElementById('videoForm').addEventListener('submit', function(event) {
+      event.preventDefault(); 
+      var formData = new FormData(this); 
+      
+      document.getElementById('loadingIndicator').style.display = 'block';
+  
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', this.action, true);
+      xhr.onload = function () {
+          document.getElementById('loadingIndicator').style.display = 'none';
+          
+          if (this.status == 200) {
+              var response = JSON.parse(this.response);
+              var resultSpan = document.getElementById('result');
+              if (response.error) {
+                  resultSpan.innerText = response.error; 
+              } else {
+                  resultSpan.innerText = 'Result: ' + response.result; 
+              }
+          } else {
+              document.getElementById('result').innerText = 'Error processing request';
+          }
+      };
+      xhr.onerror = function() {
+          document.getElementById('loadingIndicator').style.display = 'none';
+          document.getElementById('result').innerText = 'Error processing request';
+      };
+      xhr.send(formData); 
+  });
+  </script>
+  
+      </div>
         </div>
       </div>
     </div>
   </div>
 {% endblock content %}
+
+

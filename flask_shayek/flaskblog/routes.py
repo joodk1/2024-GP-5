@@ -12,6 +12,11 @@ from werkzeug.utils import secure_filename
 import random
 import string
 import requests
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.models import load_model
+import dlib
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -19,6 +24,13 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
+
+# Initialize the face detector
+detector = dlib.get_frontal_face_detector()
+
+# Load the pre-trained model
+model_path = r'C:\Users\huaweii\Downloads\ResNet50_Model_Web.h5'
+model = load_model(model_path)
 
 posts = [
     {
@@ -174,9 +186,81 @@ def register_request():
     else:
         return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
 
-@app.route('/shayekModel')
+def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+    processed_frames = []
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    step = max(1, frame_count // max_frames)
+
+    for i in range(0, frame_count, step):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+        success, frame = cap.read()
+        if success:
+            frames.append(frame)
+        if len(frames) == max_frames:
+            break
+
+    for frame in frames:
+        detected_faces = detector(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+        if detected_faces:
+            face = detected_faces[0]
+            x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
+            cropped_face = frame[y1:y2, x1:x2]
+            resized_face = cv2.resize(cropped_face, target_size)
+            processed_frames.append(resized_face)
+        else:
+            processed_frames.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8))
+
+    cap.release()
+    return np.array(processed_frames)
+
+@app.route('/shayekModel',methods=['GET','POST'])
 def shayekModel():
+    if request.method == 'POST':
+        if request.files:
+            video = request.files['video']
+            if video and video.filename != '':
+                upload_folder = 'uploads'
+                os.makedirs(upload_folder, exist_ok=True)
+                video_path = os.path.join(upload_folder, video.filename)
+                video.save(video_path)
+                # Call your processing function
+                processed_frames = extract_and_preprocess_frames(video_path)
+                if processed_frames.size == 0:
+                    os.remove(video_path)  # Clean up before returning
+                    return jsonify({'error': 'No faces detected or video is corrupted'})
+                processed_frames = np.expand_dims(processed_frames, axis=0)  # Add batch dimension
+                pred = model.predict(processed_frames)[0][0]
+                pred_label = 'Authentic' if pred <= 0.5 else 'Manipulated'
+                # Clean up the video file
+                # os.remove(video_path)
+                return jsonify({'result': pred_label})
+            return jsonify({'error': 'Invalid file or no file uploaded'})
+
     return render_template('shayekModel.html', title = 'نشيّك؟')
+
+@app.route('/upload_video', methods=['GET','POST'])
+def upload_video():
+    if request.files:
+        video = request.files['video']
+        if video.filename != '':
+            upload_folder = 'uploads'
+            os.makedirs(upload_folder, exist_ok=True)
+            video_path = os.path.join('uploads', video.filename)
+            video.save(video_path)
+            # Call your processing function
+            processed_frames = extract_and_preprocess_frames(video_path)
+            if processed_frames.size == 0:
+                return jsonify({'error': 'No faces detected or video is corrupted'})
+            processed_frames = np.expand_dims(processed_frames, axis=0)  # Add batch dimension
+            pred = model.predict(processed_frames)[0][0]
+            pred_label = 'Authentic' if pred <= 0.5 else 'Manipulated'
+            # Clean up the video file if needed
+            os.remove(video_path)
+            return jsonify({'result': pred_label})
+    return jsonify({'error': 'Invalid file or no file uploaded'})
+
 
 @login_manager.user_loader
 def load_user(user_id):
