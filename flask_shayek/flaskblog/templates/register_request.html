@@ -43,6 +43,32 @@
           {% endif %}
         </div>
         <div class="form-group">
+          {{ form.password.label(class="form-control-label") }}
+          {% if form.password.errors %}
+            {{ form.password(class="form-control form-control-lg is-invalid text-right") }}
+            <div class="invalid-feedback">
+              {% for error in form.password.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            {{ form.password(class="form-control form-control-lg text-right") }}
+          {% endif %}
+        </div>
+        <div class="form-group">
+          {{ form.confirmPassword.label(class="form-control-label") }}
+          {% if form.confirmPassword.errors %}
+            {{ form.confirmPassword(class="form-control form-control-lg is-invalid text-right") }}
+            <div class="invalid-feedback">
+              {% for error in form.confirmPassword.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            {{ form.confirmPassword(class="form-control form-control-lg text-right") }}
+          {% endif %}
+        </div>
+        <div class="form-group">
           {{ form.company_name.label(class="form-control-label") }}
           {% if form.company_name.errors %}
             {{ form.company_name(class="form-control form-control-lg is-invalid text-right") }}

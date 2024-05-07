@@ -1,13 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, EmailField, FileField
-from wtforms.validators import DataRequired, Length, Email, EqualTo
+from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp
 
-class RegistrationForm(FlaskForm):
-    username = StringField('اسم المستخدم', validators=[DataRequired(), Length(min=2, max=20)])
-    email = EmailField('البريد الإلكتروني', validators=[DataRequired(), Email()])
-    password = PasswordField('كلمة المرور', validators=[DataRequired()])
-    confirmPassword = PasswordField('تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('تسجيل')
 
 class LoginForm(FlaskForm):
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
@@ -18,8 +12,16 @@ class LoginForm(FlaskForm):
 class RegistrationRequestForm(FlaskForm):
     username = StringField('اسم المستخدم', validators=[DataRequired()])
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
-    password = PasswordField('كلمة المرور', validators=[DataRequired()])
-    confirmPassword = PasswordField('تأكيد كلمة المرور', validators=[DataRequired(), EqualTo('password')])
+    password = PasswordField('كلمة المرور', validators=[
+        DataRequired(),
+        Length(min=8, max=20, message='يجب أن تكون كلمة المرور بين 8 و20 حرفًا'),
+        Regexp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+{}|:"<>?`\-=[\]\\\';,./])(?=.*\d).+$',
+               message='يجب أن تحتوي كلمة المرور على حرف صغير وحرف كبير ورمز خاص ورقم واحد على الأقل')
+    ])
+    confirmPassword = PasswordField('تأكيد كلمة المرور', validators=[
+        DataRequired(),
+        EqualTo('password', message='يجب أن تتطابق كلمة المرور')
+    ])
     company_name = StringField('اسم المنصة', validators=[DataRequired()])
     company_docs = FileField('وثائق المنصة', validators=[DataRequired()])
     verified = BooleanField('تم التحقق', default=False)

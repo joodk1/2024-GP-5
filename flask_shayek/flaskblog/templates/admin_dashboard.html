@@ -8,8 +8,8 @@
         <p><strong>اسم المنصة:</strong> {{ request['company_name'] }}</p>
         <p><strong>الملفات المرفقة:</strong> <a href="{{ request['company_docs_url'] }}" target="_blank">تنزيل المرفقات</a></p>
         <form action="{{ url_for('verify_request', request_id=key) }}" method="post" class="admin-form">
-            <button type="submit" name="decline" value="true" class="btn">رفض</button>
-            <button type="submit" class="btn">قبول</button>
+            <button type="submit" name="decline" class="btn">رفض</button>
+            <button type="submit" name="accept" class="btn">قبول</button>
         </form>
         <hr>
     </div>

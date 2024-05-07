@@ -3,13 +3,15 @@ from uuid import uuid4
 from flask import current_app as app
 from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort
 from flaskblog import app, firebase, login_manager
-from flaskblog.forms import RegistrationForm, LoginForm, RegistrationRequestForm
+from flaskblog.forms import LoginForm, RegistrationRequestForm
 from flask_login import login_user, current_user, logout_user, login_required, UserMixin
+from flask_mail import Mail, Message
 import firebase_admin
 from firebase_admin import credentials, db, firestore, storage, auth
 from werkzeug.utils import secure_filename
 import random
 import string
+import requests
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -55,21 +57,6 @@ def user_home():
 def about():
     return render_template('about.html', title = 'من نحن؟')
 
-
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        flash(f'<i class="fas fa-check-circle me-3"></i> تم تسجيل حساب باسم {form.username.data}!', 'success')
-        return redirect(url_for('home'))
-    return render_template('register.html', title='استمارة التسجيل', form=form)
-
-import requests
-from flask import jsonify
-import os
-
 def determine_user_role(email):
     users_ref = db.reference('users')
     users_query_result = users_ref.order_by_child('email').equal_to(email).get()
@@ -113,9 +100,6 @@ def login():
             flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
-
-
-
 @app.route('/adsecretlogin', methods=['GET', 'POST'])
 def adminlogin():
     form = LoginForm()
@@ -146,9 +130,6 @@ def adminlogin():
             flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
 
-
-
-
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
     if user_ref:
@@ -172,6 +153,7 @@ def register_request():
     if form.validate_on_submit():
         username = form.username.data
         email = form.email.data
+        password = form.password.data
         company_name = form.company_name.data
         company_docs = request.files.get('company_docs')
         file_url = upload_file_to_firebase_storage(company_docs)
@@ -179,6 +161,7 @@ def register_request():
         registration_data = {
             'username': username,
             'email': email,
+            'password': password,
             'company_name': company_name,
             'company_docs_url': file_url,
             'status' : 'under review'
@@ -186,7 +169,7 @@ def register_request():
 
         db.reference('registration_requests').push(registration_data)
 
-        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح', 'success')
+        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، الرجاء مراجعة البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
         return redirect(url_for('home'))
     else:
         return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
@@ -223,11 +206,6 @@ def admin_dashboard():
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح، الرجاء تسجيل الدخول كمسؤول', 'danger')
         return redirect(url_for('login'))
 
-
-from flask import redirect, url_for, request
-    
-
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_TLS'] = False
@@ -236,10 +214,7 @@ app.config['MAIL_USERNAME'] = 'shayekgp1@gmail.com'
 app.config['MAIL_PASSWORD'] = 'ymujhammpqswenzl'
 app.config['MAIL_DEFAULT_SENDER'] = 'shayekgp1@gmail.com'
 
-from flask_mail import Mail, Message
 mail = Mail(app)
-
-
 
 @app.route('/verify_request/<request_id>', methods=['POST'])
 def verify_request(request_id):
@@ -251,46 +226,38 @@ def verify_request(request_id):
             email = request_data['email']
             subject = ""
             body = ""
+
             if 'decline' in request.form:
                 ref_request.update({'status': 'declined'})
                 subject = "رفض طلب تسجيل في منصة شيّــك"
-                body = "عزيزنا/عزيزتنا  {},\n\nتأسف لإخباركم أنه لم يتم قبول طلبكم في التسجيل مع شيّــك، الرجاء مراجعة الملف المرفق والتأكد من اكتمال المتطلبات وصحتها.".format(request_data['username'])
+                body = "عزيزنا/عزيزتنا {},\n\nنأسف لإشعاركم أنه لم يتم قبول طلب تسجيلكم في منصة شيّــك، الرجاء مراجعة الملف المرفق والتأكد من اكتمال المتطلبات وصحتها.".format(request_data['username'])
                 flash('<i class="fas fa-check-circle me-3"></i> تم رفض الطلب بنجاح', 'info')
-            else:
-                try:
-                    user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                    new_user = auth.create_user(
-                        email=request_data['email'],
-                        password=user_password,
-                    )
-                    user_data ={
+            elif 'accept' in request.form:
+                new_user = auth.create_user(
+                    email=request_data['email'],
+                    password=request_data['password'],
+                )
+                user_data = {
                     'username': request_data['username'],
                     'email': request_data['email'],
-                    'password': user_password,
-                    'posts': {} }
-                    
-                    ref_user = db.reference('users').push(user_data)
-                    ref_request.update({'status': 'accepted', 'uid': new_user.uid})                    
-                    subject = "تم قبول طلب تسجيلك مع شيّــك"
-                    body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
-
-                    flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
-                    return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
-                except Exception as e:
-                    flash(f'<i class="fas fa-times-circle me-3"></i> Error handling the request: {str(e)}', 'danger')
-                    user_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+                    'posts': {}
+                }
+                db.reference('newsoutlet').push(user_data)
+                ref_request.update({'status': 'accepted', 'uid': new_user.uid})                    
+                subject = "تم قبول طلب تسجيلكم في منصة شيّــك"
+                body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
+                flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
             # Send the email
             msg = Message(subject, recipients=[email], body=body)
             mail.send(msg)
-
-            return redirect(url_for('admin_dashboard'))
+            
+            return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
         else:
             flash('<i class="fas fa-times-circle me-3"></i> Request data not found.', 'danger')
             return redirect(url_for('admin_dashboard'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('login'))
-
 
 
 @app.route('/admin/logout')
