@@ -22,6 +22,7 @@
         <div class="d-flex align-items-center">
           {% if session['logged_in'] == True %}
               <a class="nav-item nav-link" href="{{ url_for('logout') }}" onclick="return confirmLogout()">تسجيل الخروج</a>
+              <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
           {% else %}
               <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
               <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب تسجيل حساب</a>
