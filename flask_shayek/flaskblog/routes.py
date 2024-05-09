@@ -67,7 +67,7 @@ def user_home():
         if user:
             login_user(user)
             posts = fetch_posts()
-            return render_template('user_home.html', posts=posts, user=user)
+            return render_template('user_home.html', posts=posts, user=user, user_id=user_id)
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
             return redirect(url_for('login'))
@@ -115,18 +115,18 @@ def login():
                     flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
                     return redirect(url_for('user_home'))
                 else:
-                    flash('<i class="fas fa-times-circle me-3"></i> User not found.', 'danger')
+                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
             else:
-                flash('<i class="fas fa-times-circle me-3"></i> No user ID found in response.', 'danger')
+                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
         except requests.exceptions.HTTPError as e:
             try:
                 error_json = e.response.json()
-                error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
+                error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
             except ValueError:
-                error_message = "Failed to decode JSON error message."
+                error_message = "حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا."
             flash(f'<i class="fas fa-times-circle me-3"></i> {error_message}', 'danger')
         except ValueError:
-            flash('<i class="fas fa-times-circle me-3"></i> Invalid response from authentication service.', 'danger')
+            flash('<i class="fas fa-times-circle me-3"></i> حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا.', 'danger')
 
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
@@ -156,7 +156,7 @@ def adminlogin():
 
         except requests.exceptions.HTTPError as e:
             error_json = e.response.json()
-            error_message = error_json.get('error', {}).get('message', 'UNKNOWN_ERROR')
+            error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
             flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
 
@@ -176,6 +176,20 @@ def upload_file_to_firebase_storage(file):
         blob.upload_from_string(file.read(), content_type=file.content_type)
         blob.make_public()
         return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
+
+@app.route('/profile')
+def profile():
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('login'))
+
+    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+    if not user_ref:
+        flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+        return redirect(url_for('login'))
+    username = list(user_ref.values())[0].get('username')
+    return render_template('profile.html', user_info=username, posts=posts)
 
 @app.route('/register_request', methods=['GET', 'POST'])
 def register_request():
@@ -255,12 +269,12 @@ def shayekModel():
                 processed_frames = extract_and_preprocess_frames(video_path)
                 if processed_frames.size == 0:
                     os.remove(video_path)
-                    return jsonify({'error': 'No faces detected or video is corrupted'})
+                    return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
                 processed_frames = np.expand_dims(processed_frames, axis=0)
                 pred = model.predict(processed_frames)[0][0]
-                pred_label = 'حقيقي' if pred <= 0.5 else 'معدل'
+                pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
                 return jsonify({'result': pred_label})
-            return jsonify({'error': 'Invalid file or no file uploaded'})
+            return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
@@ -278,12 +292,10 @@ def upload_video():
                 return jsonify({'error': 'No faces detected or video is corrupted'})
             processed_frames = np.expand_dims(processed_frames, axis=0)
             pred = model.predict(processed_frames)[0][0]
-            pred_label = 'الفيديو موثوق' if pred <= 0.5 else 'الفيديو غير موثوق'
-            # Clean up the video file if needed
+            pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
-    return jsonify({'error': 'Invalid file or no file uploaded'})
-
+    return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
 @login_manager.user_loader
 def load_user(email):
@@ -378,7 +390,7 @@ def verify_request(request_id):
             mail.send(msg)
             return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
         else:
-            flash('<i class="fas fa-times-circle me-3"></i> Request data not found.', 'danger')
+            flash('<i class="fas fa-times-circle me-3"></i> لم نستطع إيجاد أي بيانات.', 'danger')
             return redirect(url_for('admin_dashboard'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')

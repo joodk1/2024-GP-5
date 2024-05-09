@@ -2,92 +2,70 @@
 {% block content %}
 <div class="container-fluid my-3">
     <div class="row justify-content-center">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
-            <h2 class="card-title">نشيّك؟ </h2>
-            <hr>
-            <img src="/static/Images/ShayekModelBanner.jpeg" alt="Banner Image" style="max-width: 100%; height: auto;">
-            <hr>     
-            <div class="disclaimer">
-              <p>يرجى التأكد من التالي قبل رفع الفيديو: <br> 
-                <ul style="direction: rtl; text-align: right;">
-                    <li>يجب أن يكون الفيديو بصيغة .mp4</li>
-                    <li>سيتم التحقق من من المقاطع المعدلة باستخدام طريقة الـ Deepfake فقط</li>
-                    <li>يجب ألا تقل مدة الفيديو عن ٤ ثواني</li>
-                </ul>
-            </p>
-            <hr>
-          </div>        
-          <h3 class="text-center">رفع الفيديو</h3>
-          <br>
-          <form id="videoForm" action="/shayekModel" method="post" enctype="multipart/form-data">
-              <input type="file" name="video" accept="video/*" required style="padding-left: 6px;">
-              <br>
-              <br>
-              <button type="submit" class="btn btn-primary">تحقق من الفيديو</button>
-          </form>
-          <br>
-          <div class="loader" style="display: none;"></div>
-          <style>
-              .loader {
-                  border: 8px solid #f3f3f3;
-                  border-top: 8px solid #4f792a;
-                  border-radius: 50%;
-                  width: 50px;
-                  height: 50px;
-                  animation: spin 2s linear infinite;
-                  align-items: center;
-              }
-              @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-              }
-              #result {
-              font-weight: bold;
-              font-style: italic;
-              color: #4f792a;
-              background-color: #ffffff;
-              border-radius: 5px;
-              margin-top: 10px;
-            }
-          </style>
-          <span id="result" style="margin-left: 2px;"></span>
-          <script>
-              document.getElementById('videoForm').addEventListener('submit', function(event) {
-                  event.preventDefault();
-                  var formData = new FormData(this);
-                  
-                  document.querySelector('.loader').style.display = 'block';
-              
-                  var xhr = new XMLHttpRequest();
-                  xhr.open('POST', this.action, true);
-                  xhr.onload = function () {
-                      document.querySelector('.loader').style.display = 'none';
-                      
-                      if (this.status == 200) {
-                          var response = JSON.parse(this.response);
-                          var resultSpan = document.getElementById('result');
-                          if (response.error) {
-                              resultSpan.innerText = response.error;
-                          } else {
-                              resultSpan.innerText = 'النتيجة: ' + response.result;
-                          }
-                      } else {
-                          document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
-                      }
-                  };
-                  xhr.onerror = function() {
-                      document.querySelector('.loader').style.display = 'none';
-                      document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
-                  };
-                  xhr.send(formData);
-              });
-          </script>
-      </div>
-  </div>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">نشيّك؟ </h2>
+                    <hr>
+                    <img src="/static/Images/ShayekModelBanner.jpeg" alt="Banner Image" style="max-width: 100%; height: auto;">
+                    <hr>     
+                    <div class="disclaimer">
+                        <p>يرجى التأكد من التالي قبل رفع الفيديو: <br> 
+                            <ul style="direction: rtl; text-align: right;">
+                                <li>يجب أن يكون الفيديو بصيغة .mp4</li>
+                                <li>سيتم التحقق من من المقاطع المعدلة باستخدام طريقة الـ Deepfake فقط</li>
+                                <li>يجب ألا تقل مدة الفيديو عن ٤ ثواني</li>
+                            </ul>
+                        </p>
+                        <hr>
+                    </div>        
+                    <h3 class="text-center">رفع الفيديو</h3>
+                    <br>
+                    <div class="containerModel">
+                        <form id="videoForm" action="/shayekModel" method="post" enctype="multipart/form-data">
+                            <input type="file" name="video" accept="video/*" required style="padding-left: 6px;">
+                            <br>
+                            <br>
+                            <button type="submit" class="btn btn-primary">تحقق من الفيديو</button>
+                        </form>
+                        <div class="loader" style="display: none;"></div>
+                        <div id="result"></div>
+                    </div>        
+                    <span id="result" style="margin-left: 2px;"></span>
+                    <script>
+                        document.getElementById('videoForm').addEventListener('submit', function(event) {
+                            event.preventDefault();
+                            var formData = new FormData(this);
+                            
+                            document.querySelector('.loader').style.display = 'block';
+                        
+                            var xhr = new XMLHttpRequest();
+                            xhr.open('POST', this.action, true);
+                            xhr.onload = function () {
+                                document.querySelector('.loader').style.display = 'none';
+                                
+                                if (this.status == 200) {
+                                    var response = JSON.parse(this.response);
+                                    var resultSpan = document.getElementById('result');
+                                    if (response.error) {
+                                        resultSpan.innerText = response.error;
+                                    } else {
+                                        resultSpan.innerText = 'النتيجة: ' + response.result;
+                                    }
+                                } else {
+                                    document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                }
+                            };
+                            xhr.onerror = function() {
+                                document.querySelector('.loader').style.display = 'none';
+                                document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                            };
+                            xhr.send(formData);
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-
 {% endblock content %}
