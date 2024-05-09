@@ -269,7 +269,7 @@ def upload_video():
                 return jsonify({'error': 'No faces detected or video is corrupted'})
             processed_frames = np.expand_dims(processed_frames, axis=0)  # Add batch dimension
             pred = model.predict(processed_frames)[0][0]
-            pred_label = 'Authentic' if pred <= 0.5 else 'Manipulated'
+            pred_label = 'الفيديو موثوق' if pred <= 0.5 else 'الفيديو غير موثوق'
             # Clean up the video file if needed
             os.remove(video_path)
             return jsonify({'result': pred_label})
