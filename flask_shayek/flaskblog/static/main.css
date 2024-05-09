@@ -127,3 +127,24 @@ body {
     color: red; 
     margin-right: 5px; 
 }
+
+@media (max-width: 768px) {
+  .post-video, .post-image {
+      max-width: 100%;
+  }
+}
+
+.post-video {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin-top: 10px;
+}
+
+.post-image {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin-top: 10px;
+  border-radius: 10px;
+}

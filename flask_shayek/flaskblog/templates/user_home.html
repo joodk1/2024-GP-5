@@ -38,19 +38,19 @@
     </div>
 
     {% for post in posts %}
-        <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="#">{{ post.author }}</a>
-                    <small class="text-muted">{{ post.date_posted }}</small>
-                </div>
-                <br>
-                <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                <p class="article-content">{{ post.content }}</p>
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <a class="mr-2" href="#">{{ post.author }}</a>
+                <small class="text-muted">{{ post.timestamp }}</small>
+            </div> 
+            <br>
+            <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+            <p class="article-content">{{ post.content }}
                 {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
                     {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video controls>
+                        <video class="post-video" controls>
                             {% if file_ext == 'mp4' %}
                                 <source src="{{ post.media }}" type="video/mp4">
                             {% elif file_ext == 'webm' %}
@@ -62,10 +62,21 @@
                             {% endif %}
                         </video>
                     {% else %}
-                        <img src="{{ post.media }}" alt="الوسائط">
+                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
-            </div>
-        </article>
-    {% endfor %}
+            </p>
+            {% if post.author_email == current_user.get_id() %}
+                <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
+                    <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
+                </form>
+                <script>
+                    function confirmDelete() {
+                        return confirm('متأكد من حذف النشرة؟');
+                    }
+                  </script>
+            {% endif %}
+        </div>
+    </article>
+{% endfor %}
 {% endblock content %}

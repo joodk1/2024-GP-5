@@ -9,6 +9,7 @@ from flask_mail import Mail, Message
 import firebase_admin
 from firebase_admin import credentials, db, firestore, storage, auth
 from werkzeug.utils import secure_filename
+from datetime import datetime
 import random
 import string
 import requests
@@ -25,25 +26,30 @@ firebase_admin.initialize_app(cred, {
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 
-# Initialize the face detector
+# Initializing the face detector
 detector = dlib.get_frontal_face_detector()
 
-# Load the pre-trained model
-model_path = r'C:\Users\huaweii\Downloads\ResNet50_Model_Web.h5'
+# Loading the pre-trained model
+model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
 model = load_model(model_path)
 
 def fetch_posts():
-    posts_ref = db.reference('posts')
+    posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
+    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
     posts = []
-    for post_id, post_data in posts_snapshot.items():
+    for post_id, post_data in reversed_posts.items():
         posts.append({
+            'post_id': post_id,
             'author': post_data.get('author'),
+            'author_email': post_data.get('author_email'),
+            'timestamp': post_data.get('timestamp'),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url')
         })
     return posts
+
 posts = fetch_posts()
 
 @app.route('/')
@@ -52,16 +58,15 @@ def home():
     posts = fetch_posts()
     return render_template('home.html', posts=posts)
 
-
 @app.route('/user/home')
 @login_required
 def user_home():
-    user_id = session['user_email'] 
+    user_id = session.get('user_email')
     if user_id:
-        user = load_user(user_id) 
+        user = load_user(user_id)
         if user:
-            login_user(user) 
-            posts = fetch_posts() 
+            login_user(user)
+            posts = fetch_posts()
             return render_template('user_home.html', posts=posts, user=user)
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
@@ -69,7 +74,6 @@ def user_home():
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('login'))
-
 
 @app.route('/about')
 def about():
@@ -206,6 +210,8 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
     processed_frames = []
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     step = max(1, frame_count // max_frames)
+    blank_frame_count = 0
+    max_blank_frames=4
 
     for i in range(0, frame_count, step):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
@@ -217,14 +223,21 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
     for frame in frames:
         detected_faces = detector(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+        
         if detected_faces:
             face = detected_faces[0]
             x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
             cropped_face = frame[y1:y2, x1:x2]
             resized_face = cv2.resize(cropped_face, target_size)
             processed_frames.append(resized_face)
+            blank_frame_count = 0
         else:
             processed_frames.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8))
+            blank_frame_count += 1 
+            
+            if blank_frame_count > max_blank_frames:
+                print("No faces detected for too long. Stopping processing.")
+                break
 
     cap.release()
     return np.array(processed_frames)
@@ -239,16 +252,13 @@ def shayekModel():
                 os.makedirs(upload_folder, exist_ok=True)
                 video_path = os.path.join(upload_folder, video.filename)
                 video.save(video_path)
-                # Call your processing function
                 processed_frames = extract_and_preprocess_frames(video_path)
                 if processed_frames.size == 0:
-                    os.remove(video_path)  # Clean up before returning
+                    os.remove(video_path)
                     return jsonify({'error': 'No faces detected or video is corrupted'})
-                processed_frames = np.expand_dims(processed_frames, axis=0)  # Add batch dimension
+                processed_frames = np.expand_dims(processed_frames, axis=0)
                 pred = model.predict(processed_frames)[0][0]
-                pred_label = 'Authentic' if pred <= 0.5 else 'Manipulated'
-                # Clean up the video file
-                # os.remove(video_path)
+                pred_label = 'حقيقي' if pred <= 0.5 else 'معدل'
                 return jsonify({'result': pred_label})
             return jsonify({'error': 'Invalid file or no file uploaded'})
 
@@ -263,14 +273,12 @@ def upload_video():
             os.makedirs(upload_folder, exist_ok=True)
             video_path = os.path.join('uploads', video.filename)
             video.save(video_path)
-            # Call your processing function
             processed_frames = extract_and_preprocess_frames(video_path)
             if processed_frames.size == 0:
                 return jsonify({'error': 'No faces detected or video is corrupted'})
-            processed_frames = np.expand_dims(processed_frames, axis=0)  # Add batch dimension
+            processed_frames = np.expand_dims(processed_frames, axis=0)
             pred = model.predict(processed_frames)[0][0]
             pred_label = 'Authentic' if pred <= 0.5 else 'Manipulated'
-            # Clean up the video file if needed
             os.remove(video_path)
             return jsonify({'result': pred_label})
     return jsonify({'error': 'Invalid file or no file uploaded'})
@@ -345,7 +353,10 @@ def verify_request(request_id):
             if 'decline' in request.form:
                 ref_request.update({'status': 'declined'})
                 subject = "رفض طلب تسجيل في منصة شيّــك"
-                body = "عزيزنا/عزيزتنا {},\n\nنأسف لإشعاركم أنه لم يتم قبول طلب تسجيلكم في منصة شيّــك، الرجاء مراجعة الملف المرفق والتأكد من اكتمال المتطلبات وصحتها.".format(request_data['username'])
+                body = "عزيزنا/عزيزتنا {},\n\n" \
+                       "نأسف لإشعاركم أنه لم يتم قبول طلب تسجيلكم في منصة شيّــك، " \
+                       "الرجاء مراجعة الملف المرفق والتأكد من اكتمال المتطلبات وصحتها.".format(request_data['username'])
+
                 flash('<i class="fas fa-check-circle me-3"></i> تم رفض الطلب بنجاح', 'info')
             elif 'accept' in request.form:
                 new_user = auth.create_user(
@@ -364,7 +375,6 @@ def verify_request(request_id):
                 flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
             msg = Message(subject, recipients=[email], body=body)
             mail.send(msg)
-            
             return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
         else:
             flash('<i class="fas fa-times-circle me-3"></i> Request data not found.', 'danger')
@@ -376,36 +386,74 @@ def verify_request(request_id):
 @app.route('/submit_post', methods=['POST'])
 @login_required
 def submit_post():
-    user_id = current_user.get_id()  
-    if not user_id:
+    user_email = current_user.get_id()
+    if not user_email:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('login'))
 
+    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+    if not user_ref:
+        flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+        return redirect(url_for('login'))
+    username = list(user_ref.values())[0].get('username')
+
     title = request.form['title']
     body = request.form['body']
-    media = request.files.get('media') 
+    media = request.files.get('media')
 
     bucket = storage.bucket()
 
     media_url = None
     if media and media.filename:
         filename = secure_filename(media.filename)
-        blob = bucket.blob(f'posts/{user_id}/{filename}')
-        blob.upload_from_file(media.stream, content_type=media.content_type)
+        blob = bucket.blob(f'posts/{username}/{filename}')
+        content_type = media.content_type
+        if not content_type:
+            extension = filename.split('.')[-1].lower()
+            if extension == 'mp4':
+                content_type = 'video/mp4'
+            elif extension == 'webm':
+                content_type = 'video/webm'
+            elif extension == 'ogg':
+                content_type = 'video/ogg'
+            elif extension == 'mov':
+                content_type = 'video/quicktime'
+            else:
+                content_type = 'application/octet-stream'
+
+        blob.upload_from_file(media.stream, content_type=content_type)
         blob.make_public()
         media_url = blob.public_url
+
+    timestamp = datetime.now()
+    formatted_timestamp = timestamp.strftime("%b %d, %Y %I:%M%p")
 
     post_data = {
         'title': title,
         'body': body,
         'media_url': media_url,
-        'user_id': user_id,
-        'timestamp': {'_seconds': None, '_nanoseconds': None}
+        'author': username,
+        'author_email': user_email,
+        'timestamp': formatted_timestamp
     }
 
-    db.reference(f'posts').push(post_data)
+    db.reference('posts').push(post_data)
 
     flash('<i class="fas fa-check-circle me-3"></i> تم إضافة النشرة بنجاح', 'success')
+    return redirect(url_for('user_home'))
+
+@app.route('/delete_post/<string:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('login'))
+
+    post_ref = db.reference(f'posts/{post_id}')
+    post_ref.delete()
+
+    flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
     return redirect(url_for('user_home'))
 
 @app.route('/admin/logout')
