@@ -13,7 +13,7 @@
                     {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
                     {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video controls>
+                        <video class="post-video" controls>
                             {% if file_ext == 'mp4' %}
                                 <source src="{{ post.media }}" type="video/mp4">
                             {% elif file_ext == 'webm' %}
@@ -25,7 +25,7 @@
                             {% endif %}
                         </video>
                     {% else %}
-                        <img src="{{ post.media }}" alt="الوسائط">
+                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
             </div>
