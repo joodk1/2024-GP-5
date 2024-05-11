@@ -25,6 +25,7 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
+firebase_database = db.reference()
 
 # Initializing the face detector
 detector = dlib.get_frontal_face_detector()
@@ -74,6 +75,60 @@ def user_home():
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('login'))
+
+@app.route('/profile')
+def profile():
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('login'))
+
+    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+    if not user_ref:
+        flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+        return redirect(url_for('login'))
+    username = list(user_ref.values())[0].get('username')
+    posts = fetch_posts()
+    return render_template('profile.html', user_info=username, posts=posts)
+
+def fetch_posts_by_user(user_email):
+    posts_ref = db.reference('posts').order_by_child('author_email').equal_to(user_email)
+    posts_snapshot = posts_ref.get()
+    if not posts_snapshot:
+        return []
+
+    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
+    posts = []
+    for post_id, post_data in reversed_posts.items():
+        posts.append({
+            'post_id': post_id,
+            'author': post_data.get('author'),
+            'author_email': post_data.get('author_email'),
+            'timestamp': post_data.get('timestamp'),
+            'title': post_data.get('title'),
+            'content': post_data.get('body'),
+            'media': post_data.get('media_url')
+        })
+    return posts
+
+@app.route('/profile/<username>')
+@login_required
+def user_profile(username):
+    user = None
+    newsoutlet_ref = firebase_database.child('newsoutlet')
+    newsoutlet_data = newsoutlet_ref.get()
+    if newsoutlet_data:
+        for uid, userdata in newsoutlet_data.items():
+            if userdata.get('username') == username:
+                user = {'id': userdata.get('id'), 'username': userdata.get('username'), 'email': userdata.get('email')}
+                break
+    
+    if user:
+        posts = fetch_posts_by_user(user['email'])
+        return render_template('myprofile.html', user=user, posts=posts)
+    else:
+        flash('لم نستطع إيجاد الحساب.', 'danger')
+        return redirect(url_for('user_home'))
 
 @app.route('/about')
 def about():
@@ -176,20 +231,6 @@ def upload_file_to_firebase_storage(file):
         blob.upload_from_string(file.read(), content_type=file.content_type)
         blob.make_public()
         return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
-
-@app.route('/profile')
-def profile():
-    user_email = current_user.get_id()
-    if not user_email:
-        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
-
-    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-    if not user_ref:
-        flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-        return redirect(url_for('login'))
-    username = list(user_ref.values())[0].get('username')
-    return render_template('profile.html', user_info=username, posts=posts)
 
 @app.route('/register_request', methods=['GET', 'POST'])
 def register_request():
@@ -377,8 +418,9 @@ def verify_request(request_id):
                     password=request_data['password'],
                 )
                 user_data = {
-                    'username': request_data['username'],
+                    'username': request_data['company_name'],
                     'email': request_data['email'],
+                    'password': request_data['password'],
                     'posts': {}
                 }
                 db.reference('newsoutlet').push(user_data)
