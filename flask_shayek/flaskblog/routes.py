@@ -18,8 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 import dlib
-import bcrypt
-from flaskblog import verify_password
+
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -166,15 +165,11 @@ def login():
             if user_email:
                 user = load_user(user_email) 
                 if user:
-                    if verify_password(user.password, form.password.data):  # Verify the password
-                    
                       login_user(user)  
                       session['user_email'] = user_info['email']
                       session['logged_in'] = True
                       flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
                       return redirect(url_for('user_home'))
-                    else:
-                        flash('<i class="fas fa-times-circle me-3"></i> البريد الإلكتروني أو كلمة المرور غير صحيحة.', 'danger')
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
             else:
@@ -191,17 +186,15 @@ def login():
 
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
+
 @app.route('/adsecretlogin', methods=['GET', 'POST'])
 def adminlogin():
     form = LoginForm()
     if form.validate_on_submit():
         api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
-        password = form.password.data
-        hashed_password = verify_password(password)
-
         request_payload = {
             "email": form.email.data,
-            "password": hashed_password,
+            "password": form.password.data,
             "returnSecureToken": True
         }
         try:
@@ -224,6 +217,7 @@ def adminlogin():
             flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
 
+
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
     if user_ref:
@@ -233,12 +227,6 @@ def fetch_username_from_database(email):
         return None
     
 
-def hash_password(password):
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    return hashed_password
-
-def verify_password(password, hashed_password):
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
 
 
 def upload_file_to_firebase_storage(file):
@@ -257,7 +245,6 @@ def register_request():
         username = form.username.data
         email = form.email.data
         password = form.password.data
-        hashed_password = hash_password(password)
         company_name = form.company_name.data
         company_docs = request.files.get('company_docs')
         file_url = upload_file_to_firebase_storage(company_docs)
@@ -265,7 +252,7 @@ def register_request():
         registration_data = {
             'username': username,
             'email': email,
-            'password': hashed_password,
+            'password': password,
             'company_name': company_name,
             'company_docs_url': file_url,
             'status' : 'under review'
