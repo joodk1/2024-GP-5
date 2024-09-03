@@ -17,6 +17,7 @@ contourpy==1.2.1
 cryptography==42.0.5
 cycler==0.12.1
 cymem==2.0.8
+dlib @ file:///C:/Users/huaweii/OneDrive/Documents/GitHub/2024-GP-5/flask_shayek/dlib-19.24.1-cp311-cp311-win_amd64.whl
 
 dnspython==2.6.1
 email_validator==2.1.1

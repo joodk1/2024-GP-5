@@ -8,8 +8,8 @@ class LoginForm(FlaskForm):
     submit = SubmitField('تسجيل الدخول')
 
 class RegistrationRequestForm(FlaskForm):
-    username = StringField('الاسم الثنائي', validators=[DataRequired()])
-    email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
+    username = StringField('اسم المتقدم بالطلب', validators=[DataRequired()])
+    email = StringField('البريد الإلكتروني للمنصة', validators=[DataRequired(), Email()])
     password = PasswordField('كلمة المرور', validators=[
         DataRequired(),
         Length(min=8, max=20, message='يجب أن تكون كلمة المرور بين 8 و20 حرفًا'),
@@ -20,7 +20,7 @@ class RegistrationRequestForm(FlaskForm):
         DataRequired(),
         EqualTo('password', message='يجب أن تتطابق كلمة المرور')
     ])
-    company_name = StringField('اسم المنصة', validators=[DataRequired()])
+    company_name = StringField('اسم المنصة (يفضل أن يكون باللغة العربية)', validators=[DataRequired()])
     company_docs = FileField('وثائق المنصة', validators=[DataRequired()])
     verified = BooleanField('تم التحقق', default=False)
     submit = SubmitField('طلب فتح حساب')
