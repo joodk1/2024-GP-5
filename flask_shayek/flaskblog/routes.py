@@ -18,7 +18,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 import dlib
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -165,11 +165,11 @@ def login():
             if user_email:
                 user = load_user(user_email) 
                 if user:
-                      login_user(user)  
-                      session['user_email'] = user_info['email']
-                      session['logged_in'] = True
-                      flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
-                      return redirect(url_for('user_home'))
+                    login_user(user)  
+                    session['user_email'] = user_info['email']
+                    session['logged_in'] = True
+                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    return redirect(url_for('user_home'))
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
             else:
@@ -186,8 +186,7 @@ def login():
 
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
-
-@app.route('/adsecretlogin', methods=['GET', 'POST'])
+@app.route('/GP1routeRelease1', methods=['GET', 'POST'])
 def adminlogin():
     form = LoginForm()
     if form.validate_on_submit():
@@ -217,7 +216,6 @@ def adminlogin():
             flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
     return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
 
-
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
     if user_ref:
@@ -225,9 +223,6 @@ def fetch_username_from_database(email):
         return user_data.get('username', None)
     else:
         return None
-    
-
-
 
 def upload_file_to_firebase_storage(file):
     if file:
@@ -260,7 +255,7 @@ def register_request():
 
         db.reference('registration_requests').push(registration_data)
 
-        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، الرجاء مراجعة البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
+        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، سيتم مراجعة طلبكم والتأكد من الوثائق المرفقة، الرجاء مراجعة بريدكم الوارد أو البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
         return redirect(url_for('home'))
     else:
         return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
@@ -350,15 +345,20 @@ def load_user(email):
     if user_ref:
         user_data = next(iter(user_ref.values()), None)
         if user_data:
-            user_data.pop('email', None)  
-            return User(email=email, **user_data)
+            user_data.pop('email', None)
+            password_hash = user_data.pop('password', None)
+            if password_hash:
+                return User(email=email, password_hash=password_hash, **user_data)
+            else:
+                flash('<i class="fas fa-times-circle me-3"></i> مشكلة في بيانات المستخدم، الرجاء المحاولة لاحقاً', 'danger')
     return None
 
 class User(UserMixin):
-    def __init__(self, email, username=None, is_active=True, **kwargs):
+    def __init__(self, email, password_hash, username=None, is_active=True, **kwargs):
         self.id = email
         self.email = email
         self.username = username or kwargs.get('username')
+        self.password_hash = password_hash
         self.is_active = is_active
 
     @property
@@ -371,6 +371,9 @@ class User(UserMixin):
 
     def get_id(self):
         return self.id 
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -409,9 +412,10 @@ def verify_request(request_id):
             email = request_data['email']
             subject = ""
             body = ""
+            password_hash = generate_password_hash(request_data['password'])
 
             if 'decline' in request.form:
-                ref_request.update({'status': 'declined'})
+                ref_request.update({'status': 'declined', 'password': password_hash})
                 subject = "رفض طلب تسجيل في منصة شيّــك"
                 body = "عزيزنا/عزيزتنا {},\n\n" \
                        "نأسف لإشعاركم أنه لم يتم قبول طلب تسجيلكم في منصة شيّــك، " \
@@ -426,11 +430,10 @@ def verify_request(request_id):
                 user_data = {
                     'username': request_data['company_name'],
                     'email': request_data['email'],
-                    'password': request_data['password'],
-                    'posts': {}
+                    'password': password_hash
                 }
                 db.reference('newsoutlet').push(user_data)
-                ref_request.update({'status': 'accepted', 'uid': new_user.uid})                    
+                ref_request.update({'status': 'accepted', 'uid': new_user.uid, 'password': password_hash})                    
                 subject = "تم قبول طلب تسجيلكم في منصة شيّــك"
                 body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
                 flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
