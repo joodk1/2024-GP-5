@@ -3,25 +3,25 @@ from uuid import uuid4
 from flask import current_app as app
 from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort
 from flaskblog import app, firebase, login_manager
-from flaskblog.forms import LoginForm, RegistrationRequestForm
+from flaskblog.forms import LoginForm, RegistrationRequestForm, UserLoginForm, UserRegistrationForm
 from flask_login import login_user, current_user, logout_user, login_required, UserMixin
 from flask_mail import Mail, Message
 import firebase_admin
 from firebase_admin import credentials, db, firestore, storage, auth
 from werkzeug.utils import secure_filename
 from datetime import datetime
-import random
-import string
+#import random
+#import string
 import requests
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
-import dlib
+#import cv2
+#import numpy as np
+#import matplotlib.pyplot as plt
+#from tensorflow.keras.models import load_model
+#import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -29,11 +29,11 @@ firebase_admin.initialize_app(cred, {
 firebase_database = db.reference()
 
 # Initializing the face detector
-detector = dlib.get_frontal_face_detector()
+#detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
-model = load_model(model_path)
+#model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
+#model = load_model(model_path)
 
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
@@ -186,6 +186,50 @@ def login():
 
     return render_template('login.html', title='تسجيل الدخول', form=form)
 
+
+@app.route('/user_login', methods=['GET', 'POST'])
+def user_login():
+    form = UserLoginForm()
+    if form.validate_on_submit():
+        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        request_payload = {
+            "email": form.email.data,
+            "password": form.password.data,
+            "returnSecureToken": True
+        }
+        try:
+            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
+            response.raise_for_status()
+            user_info = response.json()  
+            
+            user_email = user_info['email']
+            user_id = user_info['localId']
+            user_data = db.reference(f'users/{user_id}').get()  
+            
+            if user_email:
+                user = load_user(user_email)
+                if user:
+                    login_user(user)  
+                    is_newsoutlet = user_data.get('is_newsoutlet', False)
+                    session['user_email'] = user_info['email']
+                    session['logged_in'] = True
+                     
+                    return redirect(url_for('regular_user_home'))  
+                else:
+                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+            else:
+                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+            user_data = db.reference(f'newsoutlets/{user_id}').get() 
+
+        except requests.exceptions.HTTPError as e:
+            flash('<i class="fas fa-times-circle me-3"></i> حدث خطأ أثناء تسجيل الدخول.', 'danger')
+        
+    return render_template('user_login.html', title='تسجيل الدخول ', form=form)
+
+
+
+
+
 @app.route('/GP1routeRelease1', methods=['GET', 'POST'])
 def adminlogin():
     form = LoginForm()
@@ -300,25 +344,25 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
 @app.route('/shayekModel',methods=['GET','POST'])
 def shayekModel():
-    if request.method == 'POST':
-        if request.files:
-            video = request.files['video']
-            if video and video.filename != '':
-                upload_folder = 'uploads'
-                os.makedirs(upload_folder, exist_ok=True)
-                video_path = os.path.join(upload_folder, video.filename)
-                video.save(video_path)
-                processed_frames = extract_and_preprocess_frames(video_path)
-                if processed_frames.size == 0:
-                    os.remove(video_path)
-                    return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
-                processed_frames = np.expand_dims(processed_frames, axis=0)
-                pred = model.predict(processed_frames)[0][0]
-                pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
-                return jsonify({'result': pred_label})
-            return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+ #   if request.method == 'POST':
+ #       if request.files:
+  #          video = request.files['video']
+   #         if video and video.filename != '':
+    #            upload_folder = 'uploads'
+     #           os.makedirs(upload_folder, exist_ok=True)
+      #          video_path = os.path.join(upload_folder, video.filename)
+       #         video.save(video_path)
+        #        processed_frames = extract_and_preprocess_frames(video_path)
+         #       if processed_frames.size == 0:
+          #          os.remove(video_path)
+           #         return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
+            #    processed_frames = np.expand_dims(processed_frames, axis=0)
+             #   pred = model.predict(processed_frames)[0][0]
+              #  pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
+               # return jsonify({'result': pred_label})
+            #return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
-    return render_template('shayekModel.html', title = 'نشيّك؟')
+     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
 def upload_video():
@@ -342,6 +386,7 @@ def upload_video():
 @login_manager.user_loader
 def load_user(email):
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+    
     if user_ref:
         user_data = next(iter(user_ref.values()), None)
         if user_data:
@@ -349,9 +394,19 @@ def load_user(email):
             password_hash = user_data.pop('password', None)
             if password_hash:
                 return User(email=email, password_hash=password_hash, **user_data)
-            else:
-                flash('<i class="fas fa-times-circle me-3"></i> مشكلة في بيانات المستخدم، الرجاء المحاولة لاحقاً', 'danger')
+
+    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
+    
+    if user_ref:
+        user_data = next(iter(user_ref.values()), None)
+        if user_data:
+            user_data.pop('email', None)
+            password_hash = user_data.pop('password', None)
+            if password_hash:
+                return User(email=email, password_hash=password_hash, **user_data) 
+    flash('<i class="fas fa-times-circle me-3"></i> مشكلة في بيانات المستخدم، الرجاء المحاولة لاحقاً', 'danger')
     return None
+
 
 class User(UserMixin):
     def __init__(self, email, password_hash, username=None, is_active=True, **kwargs):
@@ -430,7 +485,8 @@ def verify_request(request_id):
                 user_data = {
                     'username': request_data['company_name'],
                     'email': request_data['email'],
-                    'password': password_hash
+                    'password': password_hash,
+                    'is_newsoutlet': True
                 }
                 db.reference('newsoutlet').push(user_data)
                 ref_request.update({'status': 'accepted', 'uid': new_user.uid, 'password': password_hash})                    
@@ -528,3 +584,55 @@ def logout():
     session.pop('user_info', None) 
     flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل خروجك بنجاح', 'success')
     return redirect(url_for('home'))
+
+@app.route('/user_register', methods=['GET', 'POST'])
+def user_register():
+    form = UserRegistrationForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        
+        try:
+            user = auth.create_user(
+                email=email,
+                password=password
+            )
+
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            
+            user_data = {
+                'username': username,
+                'email': email,
+                'password' : hashed_password,
+                'is_newsoutlet': False 
+            }
+            
+            db.reference(f'users/{user.uid}').set(user_data)
+            
+            flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل الحساب بنجاح', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash(f'<i class="fas fa-times-circle me-3"></i> حدث خطأ: {str(e)}', 'danger')
+
+    return render_template('user_register.html', form=form)
+
+
+
+@app.route('/regular_user/home')
+@login_required
+def regular_user_home():
+    user_email = session.get('user_email')
+    if user_email:
+        user_data = load_user(user_email)
+        if user_data:
+            login_user(user_data) 
+            posts = fetch_posts()  
+            return render_template('regulerUser_home.html', posts=posts, user=user_data)
+        else:
+            flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
+            return redirect(url_for('login'))
+    else:
+        flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
+        return redirect(url_for('login'))
+

@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    <div class="container mt-4">
+        <h2>مرحبا بك، {{ session['user_email'] }}!</h2>
+       
+        
+    </div>
+    
+    {% for post in posts %}
+        <article class="media content-section">
+            <div class="media-body">
+                <div class="article-metadata">
+                    <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                    <small class="text-muted">{{ post.timestamp }}</small>
+                </div> 
+                <br>
+                <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+                <p class="article-content">{{ post.content }}
+                    {% if post.media %}
+                    {% set file_ext = post.media.split('.')[-1].lower() %}
+                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                        <video class="post-video" controls>
+                            {% if file_ext == 'mp4' %}
+                                <source src="{{ post.media }}" type="video/mp4">
+                            {% elif file_ext == 'webm' %}
+                                <source src="{{ post.media }}" type="video/webm">
+                            {% elif file_ext == 'ogg' %}
+                                <source src="{{ post.media }}" type="video/ogg">
+                            {% elif file_ext == 'mov' %}
+                                <source src="{{ post.media }}" type="video/quicktime">
+                            {% endif %}
+                        </video>
+                    {% else %}
+                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                    {% endif %}
+                {% endif %}
+            </div>
+        </article>
+    {% endfor %}
+{% endblock %}

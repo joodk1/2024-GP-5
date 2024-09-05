@@ -23,8 +23,9 @@
           {% if session['logged_in'] == True %}
               <a class="nav-item nav-link" href="{{ url_for('logout') }}" onclick="return confirmLogout()">تسجيل الخروج</a>
           {% else %}
-              <a class="nav-item nav-link" href="{{ url_for('login') }}">تسجيل الدخول</a>
-              <a class="nav-item nav-link" href="{{ url_for('register_request') }}">طلب تسجيل حساب</a>
+              <a class="nav-item nav-link" href="{{ url_for('user_register') }}"> مستخدم جديد </a>
+              <a class="nav-item nav-link" href="{{ url_for('user_login') }}">تسجيل الدخول</a>
+             
           {% endif %}
         </div>
         <script>
