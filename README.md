@@ -7,8 +7,8 @@ The goal behind Shayek is to provide a single platform that brings reliable news
 <br> and to provide a video deepfake detection model that can limit the spread of misinformation.
 
 ## Technology
-The website is developed using Flask, a Python web framework, with Python for the backend and HTML and CSS for the front end.
-<br>The models used Convolutional Neural Networks (CNN) with 5 different architectures, ResNet50 being the best.
+The website is developed using Flask, a Python web framework, for the back-end and HTML and CSS for the front-end.
+<br>The model is built using Convolutional Neural Networks (CNN) with ResNet50 architecture.
 ### Tools: 
 <ul>
   <li>Visual Studio Code</li>
