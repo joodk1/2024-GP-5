@@ -10,14 +10,14 @@ import firebase_admin
 from firebase_admin import credentials, db, firestore, storage, auth
 from werkzeug.utils import secure_filename
 from datetime import datetime
-#import random
-#import string
+import random
+import string
 import requests
-#import cv2
-#import numpy as np
-#import matplotlib.pyplot as plt
-#from tensorflow.keras.models import load_model
-#import dlib
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.models import load_model
+import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
@@ -29,11 +29,11 @@ firebase_admin.initialize_app(cred, {
 firebase_database = db.reference()
 
 # Initializing the face detector
-#detector = dlib.get_frontal_face_detector()
+detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-#model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
-#model = load_model(model_path)
+model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
+model = load_model(model_path)
 
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
@@ -227,9 +227,6 @@ def user_login():
     return render_template('user_login.html', title='تسجيل الدخول ', form=form)
 
 
-
-
-
 @app.route('/GP1routeRelease1', methods=['GET', 'POST'])
 def adminlogin():
     form = LoginForm()
@@ -344,25 +341,25 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
 @app.route('/shayekModel',methods=['GET','POST'])
 def shayekModel():
- #   if request.method == 'POST':
- #       if request.files:
-  #          video = request.files['video']
-   #         if video and video.filename != '':
-    #            upload_folder = 'uploads'
-     #           os.makedirs(upload_folder, exist_ok=True)
-      #          video_path = os.path.join(upload_folder, video.filename)
-       #         video.save(video_path)
-        #        processed_frames = extract_and_preprocess_frames(video_path)
-         #       if processed_frames.size == 0:
-          #          os.remove(video_path)
-           #         return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
-            #    processed_frames = np.expand_dims(processed_frames, axis=0)
-             #   pred = model.predict(processed_frames)[0][0]
-              #  pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
-               # return jsonify({'result': pred_label})
-            #return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+    if request.method == 'POST':
+        if request.files:
+            video = request.files['video']
+            if video and video.filename != '':
+                upload_folder = 'uploads'
+                os.makedirs(upload_folder, exist_ok=True)
+                video_path = os.path.join(upload_folder, video.filename)
+                video.save(video_path)
+                processed_frames = extract_and_preprocess_frames(video_path)
+                if processed_frames.size == 0:
+                    os.remove(video_path)
+                    return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
+                processed_frames = np.expand_dims(processed_frames, axis=0)
+                pred = model.predict(processed_frames)[0][0]
+                pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
+                return jsonify({'result': pred_label})
+            return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
-     return render_template('shayekModel.html', title = 'نشيّك؟')
+    return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
 def upload_video():
