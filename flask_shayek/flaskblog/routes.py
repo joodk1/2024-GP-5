@@ -16,12 +16,12 @@ import requests
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model # type: ignore
 import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -56,11 +56,11 @@ posts = fetch_posts()
 
 @app.route('/')
 @app.route('/homepage')
-def home():
+def homepage():
     posts = fetch_posts()
-    return render_template('home.html', posts=posts)
+    return render_template('homepage.html', posts=posts)
 
-@app.route('/user/home')
+@app.route('/NewsOutlet/home')
 @login_required
 def user_home():
     user_id = session.get('user_email')
@@ -69,28 +69,28 @@ def user_home():
         if user:
             login_user(user)
             posts = fetch_posts()
-            return render_template('user_home.html', posts=posts, user=user, user_id=user_id)
+            return render_template('newsoutlet_home.html', posts=posts, user=user, user_id=user_id)
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('login'))
+            return redirect(url_for('/NewsOutlet/login'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('/NewsOutlet/login'))
 
-@app.route('/profile')
+@app.route('/NewsOutlet/profile')
 def profile():
     user_email = current_user.get_id()
     if not user_email:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('/NewsOutlet/login'))
 
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
     if not user_ref:
         flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('/NewsOutlet/login'))
     username = list(user_ref.values())[0].get('username')
     posts = fetch_posts()
-    return render_template('profile.html', user_info=username, posts=posts)
+    return render_template('newsoutlet_profile.html', user_info=username, posts=posts)
 
 def fetch_posts_by_user(user_email):
     posts_ref = db.reference('posts').order_by_child('author_email').equal_to(user_email)
@@ -126,10 +126,10 @@ def user_profile(username):
     
     if user:
         posts = fetch_posts_by_user(user['email'])
-        return render_template('myprofile.html', user=user, posts=posts)
+        return render_template('newsoutlet_myprofile.html', user=user, posts=posts)
     else:
         flash('لم نستطع إيجاد الحساب.', 'danger')
-        return redirect(url_for('user_home'))
+        return redirect(url_for('home'))
 
 @app.route('/about')
 def about():
@@ -146,7 +146,7 @@ def determine_user_role(email):
         return 'admin'
     return None  
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/NewsOutlet/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -169,7 +169,7 @@ def login():
                     session['user_email'] = user_info['email']
                     session['logged_in'] = True
                     flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
-                    return redirect(url_for('user_home'))
+                    return redirect(url_for('/NewsOutlet/home'))
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
             else:
@@ -184,11 +184,10 @@ def login():
         except ValueError:
             flash('<i class="fas fa-times-circle me-3"></i> حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا.', 'danger')
 
-    return render_template('login.html', title='تسجيل الدخول', form=form)
+    return render_template('newsoutlet_login.html', title='تسجيل الدخول', form=form)
 
-
-@app.route('/user_login', methods=['GET', 'POST'])
-def user_login():
+@app.route('/Member/login', methods=['GET', 'POST'])
+def member_login():
     form = UserLoginForm()
     if form.validate_on_submit():
         api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
@@ -214,7 +213,7 @@ def user_login():
                     session['user_email'] = user_info['email']
                     session['logged_in'] = True
                      
-                    return redirect(url_for('regular_user_home'))  
+                    return redirect(url_for('member_home'))  
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
             else:
@@ -224,8 +223,7 @@ def user_login():
         except requests.exceptions.HTTPError as e:
             flash('<i class="fas fa-times-circle me-3"></i> حدث خطأ أثناء تسجيل الدخول.', 'danger')
         
-    return render_template('user_login.html', title='تسجيل الدخول ', form=form)
-
+    return render_template('member_login.html', title='تسجيل الدخول ', form=form)
 
 @app.route('/GP1routeRelease1', methods=['GET', 'POST'])
 def adminlogin():
@@ -404,7 +402,6 @@ def load_user(email):
     flash('<i class="fas fa-times-circle me-3"></i> مشكلة في بيانات المستخدم، الرجاء المحاولة لاحقاً', 'danger')
     return None
 
-
 class User(UserMixin):
     def __init__(self, email, password_hash, username=None, is_active=True, **kwargs):
         self.id = email
@@ -582,8 +579,8 @@ def logout():
     flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل خروجك بنجاح', 'success')
     return redirect(url_for('home'))
 
-@app.route('/user_register', methods=['GET', 'POST'])
-def user_register():
+@app.route('/member_register', methods=['GET', 'POST'])
+def member_register():
     form = UserRegistrationForm()
     if form.validate_on_submit():
         username = form.username.data
@@ -608,28 +605,30 @@ def user_register():
             db.reference(f'users/{user.uid}').set(user_data)
             
             flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل الحساب بنجاح', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('member_login'))
         except Exception as e:
             flash(f'<i class="fas fa-times-circle me-3"></i> حدث خطأ: {str(e)}', 'danger')
 
-    return render_template('user_register.html', form=form)
+    return render_template('member_register.html', form=form)
 
-
-
-@app.route('/regular_user/home')
+@app.route('/Member/home')
 @login_required
-def regular_user_home():
+def member_home():
     user_email = session.get('user_email')
     if user_email:
         user_data = load_user(user_email)
         if user_data:
             login_user(user_data) 
             posts = fetch_posts()  
-            return render_template('regulerUser_home.html', posts=posts, user=user_data)
+            user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+            if not user_ref:
+                flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+                return redirect(url_for('/Member/login'))
+            username = list(user_ref.values())[0].get('username')
+            return render_template('member_home.html', posts=posts, username=username)
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
             return redirect(url_for('login'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('login'))
-

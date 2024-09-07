@@ -23,8 +23,8 @@
           {% if session['logged_in'] == True %}
               <a class="nav-item nav-link" href="{{ url_for('logout') }}" onclick="return confirmLogout()">تسجيل الخروج</a>
           {% else %}
-              <a class="nav-item nav-link" href="{{ url_for('user_register') }}"> مستخدم جديد </a>
-              <a class="nav-item nav-link" href="{{ url_for('user_login') }}">تسجيل الدخول</a>
+              <a class="nav-item nav-link" href="{{ url_for('member_register') }}"> مستخدم جديد </a>
+              <a class="nav-item nav-link" href="{{ url_for('member_login') }}">تسجيل الدخول</a>
              
           {% endif %}
         </div>
@@ -47,7 +47,7 @@
             <a class="nav-item nav-link" href="{{ url_for('user_home') }}">الرئيسية</a>
             <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
           {% else %}
-            <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+            <a class="nav-item nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
           {% endif %}
           <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
         </div>
