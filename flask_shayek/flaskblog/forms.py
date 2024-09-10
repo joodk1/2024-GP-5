@@ -35,7 +35,7 @@ class RegistrationRequestForm(FlaskForm):
             delattr(self, 'verified')
 
 class UserRegistrationForm(FlaskForm):
-    username = StringField('اسم المستخدم', validators=[DataRequired()])
+    username = StringField('اسم المستخدم (يفضل أن يكون باللغة العربية)', validators=[DataRequired()])
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
     password = PasswordField('كلمة المرور', validators=[
         DataRequired(),
@@ -48,3 +48,7 @@ class UserRegistrationForm(FlaskForm):
         EqualTo('password', message='يجب أن تتطابق كلمة المرور')
     ])
     submit = SubmitField('تسجيل')
+
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
+    submit = SubmitField('إعادة تعيين كلمة المرور')

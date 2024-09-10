@@ -1,12 +1,6 @@
 {% extends "layout.html" %}
 
-{% block content %}
-
-<div class="container mt-4">
-    <h2>مرحبا بك، {{ session['username'] }}!</h2>
-</div>
-
-    
+{% block content %}   
     {% for post in posts %}
         <article class="media content-section">
             <div class="media-body">

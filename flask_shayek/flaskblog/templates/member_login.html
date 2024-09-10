@@ -4,7 +4,7 @@
         <form method="POST" action="">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
-                <legend class="border-bottom mb-4">!مرحبًا مجددًا مستخدم شيّـــك</legend>
+                <legend class="border-bottom mb-4"> !مرحبًا مجددًا عضو شيّـك</legend>
                 <div class="form-group">
                     {{ form.email.label(class="form-control-label") }}
                 
@@ -36,9 +36,11 @@
             </fieldset>
             <div class="z">
                 {{ form.submit(class="btn btn-outline-info") }}
+                <br>
+                <a class="nav-item nav-link" href="{{ url_for('reset_password_request') }}">نسيت كلمة المرور؟</a> </p>
 
-            <p>لتسجيل الدخول لمنصة إعلامية انقر <a class="nav-item nav-link" href="{{ url_for('login') }}">هنا!</a> </p>
-       
+                <p>لتسجيل دخول منصة إعلامية انقر <a class="nav-item nav-link" href="{{ url_for('newsoutlet_login') }}">هنا!</a> </p>
+
             </div>
         </form>
     </div>

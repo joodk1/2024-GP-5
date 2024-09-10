@@ -3,7 +3,7 @@ from uuid import uuid4
 from flask import current_app as app
 from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort
 from flaskblog import app, firebase, login_manager
-from flaskblog.forms import LoginForm, RegistrationRequestForm, UserLoginForm, UserRegistrationForm
+from flaskblog.forms import LoginForm, RegistrationRequestForm, UserLoginForm, UserRegistrationForm, ResetPasswordRequestForm
 from flask_login import login_user, current_user, logout_user, login_required, UserMixin
 from flask_mail import Mail, Message
 import firebase_admin
@@ -13,6 +13,7 @@ from datetime import datetime
 import random
 import string
 import requests
+from itsdangerous import URLSafeTimedSerializer
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -54,44 +55,6 @@ def fetch_posts():
 
 posts = fetch_posts()
 
-@app.route('/')
-@app.route('/homepage')
-def homepage():
-    posts = fetch_posts()
-    return render_template('homepage.html', posts=posts)
-
-@app.route('/NewsOutlet/home')
-@login_required
-def user_home():
-    user_id = session.get('user_email')
-    if user_id:
-        user = load_user(user_id)
-        if user:
-            login_user(user)
-            posts = fetch_posts()
-            return render_template('newsoutlet_home.html', posts=posts, user=user, user_id=user_id)
-        else:
-            flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('/NewsOutlet/login'))
-    else:
-        flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-        return redirect(url_for('/NewsOutlet/login'))
-
-@app.route('/NewsOutlet/profile')
-def profile():
-    user_email = current_user.get_id()
-    if not user_email:
-        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('/NewsOutlet/login'))
-
-    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-    if not user_ref:
-        flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-        return redirect(url_for('/NewsOutlet/login'))
-    username = list(user_ref.values())[0].get('username')
-    posts = fetch_posts()
-    return render_template('newsoutlet_profile.html', user_info=username, posts=posts)
-
 def fetch_posts_by_user(user_email):
     posts_ref = db.reference('posts').order_by_child('author_email').equal_to(user_email)
     posts_snapshot = posts_ref.get()
@@ -112,192 +75,15 @@ def fetch_posts_by_user(user_email):
         })
     return posts
 
-@app.route('/profile/<username>')
-@login_required
-def user_profile(username):
-    user = None
-    newsoutlet_ref = firebase_database.child('newsoutlet')
-    newsoutlet_data = newsoutlet_ref.get()
-    if newsoutlet_data:
-        for uid, userdata in newsoutlet_data.items():
-            if userdata.get('username') == username:
-                user = {'id': userdata.get('id'), 'username': userdata.get('username'), 'email': userdata.get('email')}
-                break
-    
-    if user:
-        posts = fetch_posts_by_user(user['email'])
-        return render_template('newsoutlet_myprofile.html', user=user, posts=posts)
-    else:
-        flash('لم نستطع إيجاد الحساب.', 'danger')
-        return redirect(url_for('home'))
+@app.route('/')
+@app.route('/homepage')
+def homepage():
+    posts = fetch_posts()
+    return render_template('homepage.html', posts=posts)
 
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
-
-def determine_user_role(email):
-    users_ref = db.reference('users')
-    users_query_result = users_ref.order_by_child('email').equal_to(email).get()
-    if users_query_result:
-        return 'user'
-    admins_ref = db.reference('admins')
-    admins_query_result = admins_ref.order_by_child('email').equal_to(email).get()
-    if admins_query_result:
-        return 'admin'
-    return None  
-
-@app.route('/NewsOutlet/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
-        request_payload = {
-            "email": form.email.data,
-            "password": form.password.data,
-            "returnSecureToken": True
-        }
-        try:
-            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
-            response.raise_for_status()
-            user_info = response.json()
-            user_email= user_info['email']
-            user_id= user_info['localId']
-            if user_email:
-                user = load_user(user_email) 
-                if user:
-                    login_user(user)  
-                    session['user_email'] = user_info['email']
-                    session['logged_in'] = True
-                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
-                    return redirect(url_for('/NewsOutlet/home'))
-                else:
-                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
-            else:
-                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
-        except requests.exceptions.HTTPError as e:
-            try:
-                error_json = e.response.json()
-                error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
-            except ValueError:
-                error_message = "حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا."
-            flash(f'<i class="fas fa-times-circle me-3"></i> {error_message}', 'danger')
-        except ValueError:
-            flash('<i class="fas fa-times-circle me-3"></i> حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا.', 'danger')
-
-    return render_template('newsoutlet_login.html', title='تسجيل الدخول', form=form)
-
-@app.route('/Member/login', methods=['GET', 'POST'])
-def member_login():
-    form = UserLoginForm()
-    if form.validate_on_submit():
-        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
-        request_payload = {
-            "email": form.email.data,
-            "password": form.password.data,
-            "returnSecureToken": True
-        }
-        try:
-            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
-            response.raise_for_status()
-            user_info = response.json()  
-            
-            user_email = user_info['email']
-            user_id = user_info['localId']
-            user_data = db.reference(f'users/{user_id}').get()  
-            
-            if user_email:
-                user = load_user(user_email)
-                if user:
-                    login_user(user)  
-                    is_newsoutlet = user_data.get('is_newsoutlet', False)
-                    session['user_email'] = user_info['email']
-                    session['logged_in'] = True
-                     
-                    return redirect(url_for('member_home'))  
-                else:
-                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
-            else:
-                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
-            user_data = db.reference(f'newsoutlets/{user_id}').get() 
-
-        except requests.exceptions.HTTPError as e:
-            flash('<i class="fas fa-times-circle me-3"></i> حدث خطأ أثناء تسجيل الدخول.', 'danger')
-        
-    return render_template('member_login.html', title='تسجيل الدخول ', form=form)
-
-@app.route('/GP1routeRelease1', methods=['GET', 'POST'])
-def adminlogin():
-    form = LoginForm()
-    if form.validate_on_submit():
-        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
-        request_payload = {
-            "email": form.email.data,
-            "password": form.password.data,
-            "returnSecureToken": True
-        }
-        try:
-            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
-            response.raise_for_status()
-            user_info = response.json()
-            email = form.email.data
-            user_role = determine_user_role(email)
-            session['logged_in'] = True
-            session['role'] = user_role 
-            if user_role == 'admin':
-                flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك كمسؤول', 'success')
-                return redirect(url_for('admin_dashboard'))
-            else:
-                flash('<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
-
-        except requests.exceptions.HTTPError as e:
-            error_json = e.response.json()
-            error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
-            flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
-    return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
-
-def fetch_username_from_database(email):
-    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
-    if user_ref:
-        user_data = next(iter(user_ref.values()))
-        return user_data.get('username', None)
-    else:
-        return None
-
-def upload_file_to_firebase_storage(file):
-    if file:
-        filename = secure_filename(file.filename)
-        bucket = storage.bucket()
-        blob = bucket.blob(f"company_docs/{filename}")
-        blob.upload_from_string(file.read(), content_type=file.content_type)
-        blob.make_public()
-        return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
-
-@app.route('/register_request', methods=['GET', 'POST'])
-def register_request():
-    form = RegistrationRequestForm()
-    if form.validate_on_submit():
-        username = form.username.data
-        email = form.email.data
-        password = form.password.data
-        company_name = form.company_name.data
-        company_docs = request.files.get('company_docs')
-        file_url = upload_file_to_firebase_storage(company_docs)
-
-        registration_data = {
-            'username': username,
-            'email': email,
-            'password': password,
-            'company_name': company_name,
-            'company_docs_url': file_url,
-            'status' : 'under review'
-        }
-
-        db.reference('registration_requests').push(registration_data)
-
-        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، سيتم مراجعة طلبكم والتأكد من الوثائق المرفقة، الرجاء مراجعة بريدكم الوارد أو البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
-        return redirect(url_for('home'))
-    else:
-        return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
 
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
@@ -338,7 +124,7 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
     return np.array(processed_frames)
 
 @app.route('/shayekModel',methods=['GET','POST'])
-def shayekModel():
+def shayekModel():  
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -360,7 +146,7 @@ def shayekModel():
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
-def upload_video():
+def upload_video():   
     if request.files:
         video = request.files['video']
         if video.filename != '':
@@ -376,12 +162,272 @@ def upload_video():
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
+            
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+
+@app.route('/home')
+@login_required
+def home():
+    user_email = session.get('user_email')
+    
+    if user_email:
+        user_data = load_user(user_email)
+        
+        if user_data:
+            login_user(user_data)
+            posts = fetch_posts()
+            
+            # Check if the user is a NewsOutlet or a Member
+            newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+            if newsoutlet_ref:
+                user_info = list(newsoutlet_ref.values())[0]
+                username = user_info.get('username')
+                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username)
+            
+            else:
+                member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+                if member_ref:
+                    user_info = list(member_ref.values())[0]
+                    username = user_info.get('username')
+                    return render_template('member_home.html', posts=posts, user=user_data, username=username)
+                else:
+                    flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+                    return redirect(url_for('/Member/login'))
+        else:
+            flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
+            return redirect(url_for('/Member/login'))
+    else:
+        flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
+        return redirect(url_for('/Member/login'))
+
+@app.route('/member_login', methods=['GET', 'POST'])
+def member_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        request_payload = {
+            "email": form.email.data,
+            "password": form.password.data,
+            "returnSecureToken": True
+        }
+        try:
+            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
+            response.raise_for_status()
+            user_info = response.json()
+
+            user_email = user_info['email']
+            user_id = user_info['localId']
+
+            user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+
+            if user_ref:
+                user_data = list(user_ref.values())[0]
+                user = load_user(user_email)
+
+                if user:
+                    login_user(user)
+                    session['user_email'] = user_email
+                    session['logged_in'] = True
+                    session['user_type'] = 'member'
+                    session['username'] = user_data.get('username')
+
+                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    return redirect(url_for('home'))
+                else:
+                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+
+            else:
+                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+
+        except requests.exceptions.HTTPError as e:
+            try:
+                error_json = e.response.json()
+                error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
+            except ValueError:
+                error_message = "حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا."
+            flash(f'<i class="fas fa-times-circle me-3"></i> {error_message}', 'danger')
+
+        except ValueError:
+            flash('<i class="fas fa-times-circle me-3"></i> حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا.', 'danger')
+
+    return render_template('member_login.html', title='تسجيل دخول الأعضاء', form=form)
+
+@app.route('/newsoutlet_login', methods=['GET', 'POST'])
+def newsoutlet_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        request_payload = {
+            "email": form.email.data,
+            "password": form.password.data,
+            "returnSecureToken": True
+        }
+        try:
+            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
+            response.raise_for_status()
+            user_info = response.json()
+
+            user_email = user_info['email']
+            user_id = user_info['localId']
+
+            newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
+            if newsoutlet_ref:
+                user_data = list(newsoutlet_ref.values())[0]
+                user = load_user(user_email)
+
+                if user:
+                    login_user(user)
+                    session['user_email'] = user_email
+                    session['logged_in'] = True
+                    session['user_type'] = 'newsoutlet'
+                    session['username'] = user_data.get('username')
+
+                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    return redirect(url_for('home'))
+                else:
+                    flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+
+            else:
+                flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
+
+        except requests.exceptions.HTTPError as e:
+            try:
+                error_json = e.response.json()
+                error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
+            except ValueError:
+                error_message = "حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا."
+            flash(f'<i class="fas fa-times-circle me-3"></i> {error_message}', 'danger')
+
+        except ValueError:
+            flash('<i class="fas fa-times-circle me-3"></i> حدثت مشكلة أثناء المعالجة، فضلًا حاول مجددًا.', 'danger')
+
+    return render_template('newsoutlet_login.html', title='تسجيل دخول المنصة الإعلامية', form=form)
+
+@app.route('/profile')
+@login_required
+def profile():
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+    
+    if user_ref:
+        user_type = 'newsoutlet'
+    else:
+        user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+        if not user_ref:
+            flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
+            return redirect(url_for('member_login'))
+        user_type = 'member'
+
+    username = list(user_ref.values())[0].get('username')
+    posts = fetch_posts_by_user(user_email)
+
+    if user_type == 'newsoutlet':
+        return render_template('newsoutlet_profile.html', user_info=username, posts=posts)
+    else:
+        return render_template('member_profile.html', user_info=username)
+
+@app.route('/profile/<username>')
+def user_profile(username):
+    user = None
+    newsoutlet_ref = firebase_database.child('newsoutlet')
+    newsoutlet_data = newsoutlet_ref.get()
+    if newsoutlet_data:
+        for uid, userdata in newsoutlet_data.items():
+            if userdata.get('username') == username:
+                user = {'id': userdata.get('id'), 'username': userdata.get('username'), 'email': userdata.get('email')}
+                posts = fetch_posts_by_user(user['email'])  # Query by email
+                return render_template('newsoutlet_profile.html', user=user, posts=posts)
+    
+    if not user:
+        member_ref = firebase_database.child('users')
+        member_data = member_ref.get()
+        if member_data:
+            for uid, userdata in member_data.items():
+                if userdata.get('username') == username:
+                    user = {'id': userdata.get('id'), 'username': userdata.get('username'), 'email': userdata.get('email')}
+                    return render_template('member_profile.html', user=user)
+    else:
+        flash('لم نستطع إيجاد الحساب.', 'danger')
+        return redirect(url_for('home'))
+
+def determine_user_role(email):
+    users_ref = db.reference('users')
+    users_query_result = users_ref.order_by_child('email').equal_to(email).get()
+    if users_query_result:
+        return 'user'
+    admins_ref = db.reference('admins')
+    admins_query_result = admins_ref.order_by_child('email').equal_to(email).get()
+    if admins_query_result:
+        return 'admin'
+    return None  
+
+@app.route('/member_register', methods=['GET', 'POST'])
+def member_register():
+    form = UserRegistrationForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        
+        try:
+            user = auth.create_user(
+                email=email,
+                password=password
+            )
+
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            
+            user_data = {
+                'username': username,
+                'email': email,
+                'password' : hashed_password,
+                'is_newsoutlet': False 
+            }
+            
+            db.reference(f'users/{user.uid}').set(user_data)
+            
+            flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل الحساب بنجاح', 'success')
+            return redirect(url_for('member_login'))
+        except Exception as e:
+            flash(f'<i class="fas fa-times-circle me-3"></i> حدث خطأ: {str(e)}', 'danger')
+
+    return render_template('member_register.html', form=form)
+
+@app.route('/register_request', methods=['GET', 'POST'])
+def register_request():
+    form = RegistrationRequestForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        company_name = form.company_name.data
+        company_docs = request.files.get('company_docs')
+        file_url = upload_file_to_firebase_storage(company_docs)
+
+        registration_data = {
+            'username': username,
+            'email': email,
+            'password': password,
+            'company_name': company_name,
+            'company_docs_url': file_url,
+            'status' : 'under review'
+        }
+
+        db.reference('registration_requests').push(registration_data)
+
+        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، سيتم مراجعة طلبكم والتأكد من الوثائق المرفقة، الرجاء مراجعة بريدكم الوارد أو البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
+        return redirect(url_for('homepage'))
+    else:
+        return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
 
 @login_manager.user_loader
 def load_user(email):
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
-    
     if user_ref:
         user_data = next(iter(user_ref.values()), None)
         if user_data:
@@ -423,23 +469,6 @@ class User(UserMixin):
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
-@app.route('/admin/dashboard')
-def admin_dashboard():
-    if 'logged_in' in session and session['role'] == 'admin':
-        ref = db.reference('registration_requests')
-        requests = ref.order_by_child('status').equal_to('under review').get()
-
-        for key, request in requests.items():
-            if 'company_docs_url' in request and request['company_docs_url'].startswith('gs://'):
-                gs_url = request['company_docs_url']
-                https_url = gs_url.replace('gs://', 'https://storage.googleapis.com/', 1)
-                request['company_docs_url'] = https_url
-        
-        return render_template('admin_dashboard.html', requests=requests)
-    else:
-        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح، الرجاء تسجيل الدخول كمسؤول', 'danger')
-        return redirect(url_for('login'))
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -497,18 +526,35 @@ def verify_request(request_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('login'))
 
+def fetch_username_from_database(email):
+    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
+    if user_ref:
+        user_data = next(iter(user_ref.values()))
+        return user_data.get('username', None)
+    else:
+        return None
+
+def upload_file_to_firebase_storage(file):
+    if file:
+        filename = secure_filename(file.filename)
+        bucket = storage.bucket()
+        blob = bucket.blob(f"company_docs/{filename}")
+        blob.upload_from_string(file.read(), content_type=file.content_type)
+        blob.make_public()
+        return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
+
 @app.route('/submit_post', methods=['POST'])
 @login_required
 def submit_post():
     user_email = current_user.get_id()
     if not user_email:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('newsoutlet_login'))
 
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
     if not user_ref:
         flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('newsoutlet_login'))
     username = list(user_ref.values())[0].get('username')
 
     title = request.form['title']
@@ -554,7 +600,7 @@ def submit_post():
     db.reference('posts').push(post_data)
 
     flash('<i class="fas fa-check-circle me-3"></i> تم إضافة النشرة بنجاح', 'success')
-    return redirect(url_for('user_home'))
+    return redirect(url_for('home'))
 
 @app.route('/delete_post/<string:post_id>', methods=['POST'])
 @login_required
@@ -562,73 +608,70 @@ def delete_post(post_id):
     user_email = current_user.get_id()
     if not user_email:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('newsoutlet_login'))
 
     post_ref = db.reference(f'posts/{post_id}')
     post_ref.delete()
 
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
-    return redirect(url_for('user_home'))
+    return redirect(url_for('home'))
 
 @app.route('/admin/logout')
 @app.route('/logout')
 def logout():
-    session.pop('logged_in', None)
-    session.pop('role', None)
-    session.pop('user_info', None) 
+    session.clear()
+    logout_user()
     flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل خروجك بنجاح', 'success')
-    return redirect(url_for('home'))
+    return redirect(url_for('homepage'))
+    
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    form = ResetPasswordRequestForm()
+    return render_template('reset_password_request.html', form=form)
 
-@app.route('/member_register', methods=['GET', 'POST'])
-def member_register():
-    form = UserRegistrationForm()
+@app.route('/GP1routeRelease1', methods=['GET', 'POST'])
+def adminlogin():
+    form = LoginForm()
     if form.validate_on_submit():
-        username = form.username.data
-        email = form.email.data
-        password = form.password.data
-        
+        api_key = "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY"
+        request_payload = {
+            "email": form.email.data,
+            "password": form.password.data,
+            "returnSecureToken": True
+        }
         try:
-            user = auth.create_user(
-                email=email,
-                password=password
-            )
+            response = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}", json=request_payload)
+            response.raise_for_status()
+            user_info = response.json()
+            email = form.email.data
+            user_role = determine_user_role(email)
+            session['logged_in'] = True
+            session['role'] = user_role 
+            if user_role == 'admin':
+                flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك كمسؤول', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                flash('<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
 
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-            
-            user_data = {
-                'username': username,
-                'email': email,
-                'password' : hashed_password,
-                'is_newsoutlet': False 
-            }
-            
-            db.reference(f'users/{user.uid}').set(user_data)
-            
-            flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل الحساب بنجاح', 'success')
-            return redirect(url_for('member_login'))
-        except Exception as e:
-            flash(f'<i class="fas fa-times-circle me-3"></i> حدث خطأ: {str(e)}', 'danger')
+        except requests.exceptions.HTTPError as e:
+            error_json = e.response.json()
+            error_message = error_json.get('error', {}).get('message', 'مشكلة غير معروفة')
+            flash(f'<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
+    return render_template('adsecretlogin.html', title='تسجيل الدخول', form=form)
 
-    return render_template('member_register.html', form=form)
+@app.route('/dashboard')
+def admin_dashboard():
+    if 'logged_in' in session and session['role'] == 'admin':
+        ref = db.reference('registration_requests')
+        requests = ref.order_by_child('status').equal_to('under review').get()
 
-@app.route('/Member/home')
-@login_required
-def member_home():
-    user_email = session.get('user_email')
-    if user_email:
-        user_data = load_user(user_email)
-        if user_data:
-            login_user(user_data) 
-            posts = fetch_posts()  
-            user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
-            if not user_ref:
-                flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-                return redirect(url_for('/Member/login'))
-            username = list(user_ref.values())[0].get('username')
-            return render_template('member_home.html', posts=posts, username=username)
-        else:
-            flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('login'))
+        for key, request in requests.items():
+            if 'company_docs_url' in request and request['company_docs_url'].startswith('gs://'):
+                gs_url = request['company_docs_url']
+                https_url = gs_url.replace('gs://', 'https://storage.googleapis.com/', 1)
+                request['company_docs_url'] = https_url
+        
+        return render_template('admin_dashboard.html', requests=requests)
     else:
-        flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-        return redirect(url_for('login'))
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح، الرجاء تسجيل الدخول كمسؤول', 'danger')
+        return redirect(url_for('member_login'))
