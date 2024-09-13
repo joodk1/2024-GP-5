@@ -1,35 +1,64 @@
 {% extends "layout.html" %}
 
-{% block content %}   
+{% block content %}
+    <!-- Toggle between all posts and followed users -->
+    <div class="btn-group" role="group" aria-label="Post Filter">
+        <a href="{{ url_for('home', filter='followed') }}" 
+        class="btn btn-outline-primary {% if filter == 'followed' %}active green-button{% endif %} post-filter-btn" 
+        data-filter="followed">
+         المتابعين
+     </a>
+        <a href="{{ url_for('home', filter='all') }}" 
+           class="btn btn-outline-primary {% if filter == 'all' %}active green-button{% endif %} post-filter-btn" 
+           data-filter="all">
+            الجميع
+        </a>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.post-filter-btn');
+    
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                });
+            });
+        });
+    </script>  
+    
+
     {% for post in posts %}
         <article class="media content-section">
             <div class="media-body">
                 <div class="article-metadata">
                     <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
                     <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
+                </div>
                 <br>
                 <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
                 <p class="article-content">{{ post.content }}
                     {% if post.media %}
-                    {% set file_ext = post.media.split('.')[-1].lower() %}
-                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video class="post-video" controls>
-                            {% if file_ext == 'mp4' %}
-                                <source src="{{ post.media }}" type="video/mp4">
-                            {% elif file_ext == 'webm' %}
-                                <source src="{{ post.media }}" type="video/webm">
-                            {% elif file_ext == 'ogg' %}
-                                <source src="{{ post.media }}" type="video/ogg">
-                            {% elif file_ext == 'mov' %}
-                                <source src="{{ post.media }}" type="video/quicktime">
-                            {% endif %}
-                        </video>
-                    {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                        {% set file_ext = post.media.split('.')[-1].lower() %}
+                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                            <video class="post-video" controls>
+                                {% if file_ext == 'mp4' %}
+                                    <source src="{{ post.media }}" type="video/mp4">
+                                {% elif file_ext == 'webm' %}
+                                    <source src="{{ post.media }}" type="video/webm">
+                                {% elif file_ext == 'ogg' %}
+                                    <source src="{{ post.media }}" type="video/ogg">
+                                {% elif file_ext == 'mov' %}
+                                    <source src="{{ post.media }}" type="video/quicktime">
+                                {% endif %}
+                            </video>
+                        {% else %}
+                            <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                        {% endif %}
                     {% endif %}
-                {% endif %}
+                </p>
             </div>
-        </article>
+        </article>     
     {% endfor %}
 {% endblock %}

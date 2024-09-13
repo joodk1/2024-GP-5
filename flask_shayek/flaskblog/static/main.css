@@ -183,3 +183,15 @@ a.article-title:hover {
 #contact {
   color: var(--dark-green);
 }
+
+.green-button {
+  background-color: var(--dark-green) !important;
+  color: white !important;
+  border-color: var(--dark-green) !important;
+}
+
+.btn-outline-primary.active {
+  background-color: var(--dark-green) !important;
+  color: white !important;
+  border-color: var(--dark-green) !important;
+}

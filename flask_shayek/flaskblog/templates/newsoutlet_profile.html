@@ -1,64 +1,133 @@
 {% extends "layout.html" %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4>معلومات الحساب</h4>
-        </div>
-        <div class="card-body">
-            <h5 class="card-title"> اسم الصحيفة: {{ user_info }}</h5>
-            <h5 class="card-title"> عدد المتابعين: 5000</h5> 
-
-            {% if user_info == current_user.username %}
-                <!-- Profile owner sees the delete post option -->
-                <script>
-                    function confirmDelete() {
-                        return confirm('متأكد من حذف النشرة؟');
-                    }
-                </script>
-            {% else %}
-                <!-- Visitor sees the follow option -->
-                <button type="submit" class="btn btn-primary">متابعة</button>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4>المنشورات</h4>
-        </div>
-
-        {% for post in posts %}
-            <article class="media content-section">
-                <div class="media-body">
-                    <div class="article-metadata">
-                        <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
-                        <small class="text-muted">{{ post.timestamp }}</small>
-                    </div>
-                    <br>
-                    <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                    <p class="article-content">{{ post.content }}</p>
-
-                    {% if post.media %}
-                        {% set file_ext = post.media.split('.')[-1].lower() %}
-                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                            <video class="post-video" controls>
-                                <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                            </video>
-                        {% else %}
-                            <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                        {% endif %}
-                    {% endif %}
-
-                    <!-- Only show delete button if the logged-in user is the post author -->
-                    {% if user_info == current_user.username %}
-                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                            <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                        </form>
-                    {% endif %}
+<body>
+    <div class="container mt-5">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>معلومات الحساب</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">اسم الصحيفة: {{ user_info }}</h5>
+                <div class="newsoutlet-profile">
+                    <p>المتابعين: <span id="follower-count">{{ followers }}</span></p>
                 </div>
-            </article>
-        {% endfor %}
+
+                {% if user_info == current_user.username %}
+                    <!-- Profile owner sees the delete post option -->
+                    <script>
+                        function confirmDelete() {
+                            return confirm('متأكد من حذف النشرة؟');
+                        }
+                    </script>
+                {% else %}
+                    {% if session['logged_in'] == True %}
+                        <!-- Visitor sees the follow/unfollow option -->
+                        <div id="follow-buttons">
+                            {% if is_following %}
+                                <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
+                                <button id="follow-btn" class="btn btn-primary" style="display: none;">متابعة</button>
+                            {% else %}
+                                <button id="follow-btn" class="btn btn-primary">متابعة</button>
+                                <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>المنشورات</h4>
+            </div>
+
+            {% for post in posts %}
+                <article class="media content-section">
+                    <div class="media-body">
+                        <div class="article-metadata">
+                            <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                            <small class="text-muted">{{ post.timestamp }}</small>
+                        </div>
+                        <br>
+                        <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+                        <p class="article-content">{{ post.content }}</p>
+
+                        {% if post.media %}
+                            {% set file_ext = post.media.split('.')[-1].lower() %}
+                            {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                                <video class="post-video" controls>
+                                    <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                                </video>
+                            {% else %}
+                                <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Only show delete button if the logged-in user is the post author -->
+                        {% if user_info == current_user.username %}
+                            <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
+                                <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
     </div>
-</div>
+
+    <script>
+        $(document).ready(function() {
+            $('#follow-btn').click(function(e) {
+                e.preventDefault(); 
+
+                $.ajax({
+                    url: '{{ url_for("follow_newsoutlet", username=user_info) }}',
+                    type: 'POST',
+                    data: {
+                        useremail: '{{ useremail }}'
+                    },
+                    success: function(response) {
+                        console.log(response); 
+                        if (response.success) {
+                            $('#follower-count').text(response.follower_count);
+                            $('#follow-btn').hide();
+                            $('#unfollow-btn').show();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error); 
+                    }
+                });
+            });
+
+            $('#unfollow-btn').click(function(e) {
+                e.preventDefault(); 
+
+                $.ajax({
+                    url: '{{ url_for("unfollow_newsoutlet", username=user_info) }}',
+                    type: 'POST',
+                    data: {
+                        useremail: '{{ useremail }}'
+                    },
+                    success: function(response) {
+                        console.log(response); 
+                        if (response.success) {
+                            $('#follower-count').text(response.follower_count);
+                            $('#unfollow-btn').hide();
+                            $('#follow-btn').show();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error); 
+                    }
+                });
+            });
+        });
+    </script>
+</body>
 {% endblock %}
