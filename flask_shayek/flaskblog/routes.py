@@ -22,7 +22,7 @@ import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -32,7 +32,7 @@ firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = '/Users/lamiafa/Downloads/Delivery 2/ResNet50_Model_Web.h5'
+model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
 model = load_model(model_path)
 
 def fetch_posts():
@@ -83,6 +83,7 @@ def homepage():
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
+
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
     frames = []
@@ -167,7 +168,7 @@ def upload_video():
 @login_required
 def home():
     user_email = session.get('user_email') 
-    filter_option = request.args.get('filter', 'followed')  # Default to 'all'
+    filter_option = request.args.get('filter', 'followed')  # Default to 'followed'
 
     if user_email:
         user_data = load_user(user_email)
@@ -205,7 +206,6 @@ def home():
                             user_posts = fetch_posts_by_user(newsoutlet_id)
                             if user_posts:
                                 posts.extend(user_posts)
-                                posts.reverse()
 
                     else:
                         posts = fetch_posts()
