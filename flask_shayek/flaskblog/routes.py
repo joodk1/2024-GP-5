@@ -413,9 +413,6 @@ def user_profile(username):
     flash('لم نستطع إيجاد الحساب.', 'danger')
     return redirect(url_for('home'))
 
-
-
-
 def determine_user_role(email):
     users_ref = db.reference('users')
     users_query_result = users_ref.order_by_child('email').equal_to(email).get()
@@ -739,9 +736,6 @@ def admin_dashboard():
     
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
-
-
-from flask import jsonify
 
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
