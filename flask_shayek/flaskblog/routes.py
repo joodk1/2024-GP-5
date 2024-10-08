@@ -74,6 +74,9 @@ def fetch_posts_by_user(user_email):
         })
     return posts
 
+def encode_email(email):
+    return email.replace('.', 'dot').replace('@', 'at')
+
 @app.route('/')
 @app.route('/homepage')
 def homepage():
@@ -176,7 +179,6 @@ def home():
         if user_data:
             login_user(user_data)
             newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-            
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
@@ -185,7 +187,6 @@ def home():
             
             else:
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
-                
                 if member_ref:
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
@@ -214,12 +215,10 @@ def home():
                 
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-                    return redirect(url_for('Member_login'))
-        
+                    return redirect(url_for('Member_login'))        
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('Member_login'))
-    
+            return redirect(url_for('Member_login'))    
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('Member_login'))
@@ -361,6 +360,7 @@ def user_profile(username):
     current_user_email = session.get('user_email')
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
+
 
     if newsoutlet_data:
         for uid, userdata in newsoutlet_data.items():
@@ -582,7 +582,7 @@ def verify_request(request_id):
             return redirect(url_for('admin_dashboard'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('member_login'))
 
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
