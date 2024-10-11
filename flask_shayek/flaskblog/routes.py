@@ -22,7 +22,7 @@ import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -32,8 +32,8 @@ firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
-model = load_model(model_path)
+#model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
+#model = load_model(model_path)
 
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
@@ -73,6 +73,9 @@ def fetch_posts_by_user(user_email):
             'media': post_data.get('media_url')
         })
     return posts
+
+def encode_email(email):
+    return email.replace('.', 'dot').replace('@', 'at')
 
 @app.route('/')
 @app.route('/homepage')
@@ -176,7 +179,6 @@ def home():
         if user_data:
             login_user(user_data)
             newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-            
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
@@ -185,7 +187,6 @@ def home():
             
             else:
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
-                
                 if member_ref:
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
@@ -214,12 +215,10 @@ def home():
                 
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-                    return redirect(url_for('Member_login'))
-        
+                    return redirect(url_for('Member_login'))        
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('Member_login'))
-    
+            return redirect(url_for('Member_login'))    
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('Member_login'))
@@ -362,6 +361,7 @@ def user_profile(username):
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
 
+
     if newsoutlet_data:
         for uid, userdata in newsoutlet_data.items():
             if userdata.get('username') == username:
@@ -412,9 +412,6 @@ def user_profile(username):
 
     flash('لم نستطع إيجاد الحساب.', 'danger')
     return redirect(url_for('home'))
-
-
-
 
 def determine_user_role(email):
     users_ref = db.reference('users')
@@ -585,7 +582,7 @@ def verify_request(request_id):
             return redirect(url_for('admin_dashboard'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('member_login'))
 
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
@@ -740,9 +737,6 @@ def admin_dashboard():
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
 
-
-from flask import jsonify
-
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow_newsoutlet(username):
@@ -803,3 +797,15 @@ def unfollow_newsoutlet(username):
 
     else:
         return jsonify({'success': False, 'message': 'News Outlet not found'})
+
+
+
+@app.route('/post/<string:post_id>')
+def post(post_id):
+    posts = fetch_posts()  
+    post = next((p for p in posts if p['post_id'] == post_id), None)  
+
+    if not post:
+        abort(404)  
+
+    return render_template('post.html', post=post)

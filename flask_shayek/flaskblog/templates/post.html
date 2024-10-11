@@ -1,19 +1,33 @@
 {% extends "layout.html" %}
-
 {% block content %}
-
-    
-    {% for post in posts %}
-        <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
-                <br>
-                <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                <p class="article-content">{{ post.content }}
-                    {% if post.media %}
+<button onclick="goBack()" class="back-button">&#8592; للعودة </button>
+<style>.back-button {
+    background: #4F792A;
+    color: white;
+    padding: 15px 10px;
+    border: none;
+    border-radius: 20px; 
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 15px;
+}</style>
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+<br>
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                <small class="text-muted">{{ post.timestamp }}</small>
+            </div>
+     
+        
+            <h3>{{ post.title }}</h3>
+            <p class="article-content">{{ post.content }}
+                {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
                     {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
                         <video class="post-video" controls>
@@ -31,7 +45,7 @@
                         <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
-            </div>
-        </article>
-    {% endfor %}
+            </p>
+        </div>
+    </article>
 {% endblock %}

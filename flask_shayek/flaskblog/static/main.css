@@ -196,7 +196,6 @@ a.article-title:hover {
   border-color: var(--dark-green) !important;
 }
 
-/* Default white button styling */
 .switch-button {
   background-color: white;
   color: var(--dark-green);
@@ -208,27 +207,23 @@ a.article-title:hover {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Green button when clicked/active */
 .switch-button.active {
   background-color: var(--dark-green);
   color: white;
 }
 
-/* Hover effects */
 .switch-button:hover {
   background-color: var(--light-green);
   color: white;
   border-color: var(--light-green);
 }
 
-/* Default button style */
 .white-button {
   background-color: white;
   color: var(--dark-green);
   border-color: var(--dark-green);
 }
 
-/* Active button (green) */
 .green-button {
   background-color: var(--dark-green) !important;
   color: white !important;

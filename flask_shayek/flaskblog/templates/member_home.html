@@ -28,7 +28,6 @@
         });
     </script>  
     
-
     {% for post in posts %}
         <article class="media content-section">
             <div class="media-body">
@@ -37,7 +36,11 @@
                     <small class="text-muted">{{ post.timestamp }}</small>
                 </div>
                 <br>
-                <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+            
+                <h3><a class="article-title" href="{{ url_for('post', post_id=post.post_id) }}">{{ post.title }}</a></h3>
+
+                
+                </script>
                 <p class="article-content">{{ post.content }}
                     {% if post.media %}
                         {% set file_ext = post.media.split('.')[-1].lower() %}
@@ -61,4 +64,5 @@
             </div>
         </article>     
     {% endfor %}
+
 {% endblock %}
