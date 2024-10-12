@@ -1,79 +1,69 @@
 {% extends "layout.html" %}
-@import url(https://fonts.googleapis.com/earlyaccess/droidarabickufi.css);
 {% block content %}
-<head>
-  <script>
-    function updateFileName(input) {
-      var fileName = input.files[0].name;
-      var label = input.nextElementSibling;
-      label.innerText = fileName;
-    }
-  </script>
-</head>
-<div class="content-section text-right">
-  <form method="POST" action="" enctype="multipart/form-data" class="user-forms">
-    {{ form.hidden_tag() }}
-    <fieldset class="form-group">
-      <legend class="border-bottom mb-4">تسجيل عضو جديد</legend>
-      <div class="form-group">
-        {{ form.username.label(class="form-control-label") }}
-        {% if form.username.errors %}
-          {{ form.username(class="form-control form-control-lg is-invalid text-right") }}
-          <div class="invalid-feedback">
-            {% for error in form.username.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
+    <div class="content-section text-right">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="z">
+    
+              <a href="{{ url_for('register_request') }}"  class="white-button post-filter-btn btn mt-3">تسجيل دخول كصحيفة</a>
+        
+              <a href="{{ url_for('member_register') }}" class="white-button post-filter-btn btn mt-3">تسجيل دخول كعضو</a>
+          
+              <br>
+              <br>
+          
           </div>
-        {% else %}
-          {{ form.username(class="form-control form-control-lg text-right") }}
-        {% endif %}
-      </div>
-      <div class="form-group">
-        {{ form.email.label(class="form-control-label") }}
-        {% if form.email.errors %}
-          {{ form.email(class="form-control form-control-lg is-invalid text-right") }}
-          <div class="invalid-feedback">
-            {% for error in form.email.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
-          </div>
-        {% else %}
-          {{ form.email(class="form-control form-control-lg text-right") }}
-        {% endif %}
-      </div>
-      <div class="form-group">
-        {{ form.password.label(class="form-control-label") }}
-        {% if form.password.errors %}
-          {{ form.password(class="form-control form-control-lg is-invalid text-right") }}
-          <div class="invalid-feedback">
-            {% for error in form.password.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
-          </div>
-        {% else %}
-          {{ form.password(class="form-control form-control-lg text-right") }}
-        {% endif %}
-      </div>
-      
-      <div class="form-group">
-        {{ form.confirmPassword.label(class="form-control-label") }}
-        {% if form.confirmPassword.errors %}
-          {{ form.confirmPassword(class="form-control form-control-lg is-invalid text-right") }}
-          <div class="invalid-feedback">
-            {% for error in form.confirmPassword.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
-          </div>
-        {% else %}
-          {{ form.confirmPassword(class="form-control form-control-lg text-right") }}
-        {% endif %}
-      </div>
-      <div class="form-group">
-        {{ form.submit(class="btn form-buttons") }}
-      </div>
-      <p>لتسجيل منصة إعلامية جديدة انقر<a class="nav-item nav-link" href="{{ url_for('register_request') }}">هنا!</a> </p>
-      
-    </fieldset>
-  </form>
-</div>
-{% endblock %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4"> !تسجيل حساب جديد</legend>
+                <div class="form-group">
+                    {{ form.email.label(class="form-control-label") }}
+                
+                    {% if form.email.errors %}
+                        {{ form.email(class="form-control form-control-lg is-invalid text-right") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.email.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}  
+                        {{ form.email(class="form-control form-control-lg text-right") }}      
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.password.label(class="form-control-label") }}
+                
+                    {% if form.password.errors %}
+                        {{ form.password(class="form-control form-control-lg is-invalid text-right") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.password.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}  
+                        {{ form.password(class="form-control form-control-lg text-right") }}      
+                    {% endif %}
+                </div>              
+            </fieldset>
+
+            <div class="z">
+                {{ form.submit(class="btn btn-outline-info white-button post-filter-btn") }}
+                <br>
+                <a class="nav-item nav-link mt-2" href="{{ url_for('reset_password_request') }}">نسيت كلمة المرور؟</a>
+              
+            </div>
+            
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.post-filter-btn');
+        
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                });
+            });
+        });
+    </script>
+{% endblock content %}

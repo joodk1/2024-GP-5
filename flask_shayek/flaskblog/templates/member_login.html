@@ -3,7 +3,18 @@
     <div class="content-section text-right">
         <form method="POST" action="">
             {{ form.hidden_tag() }}
+            <div class="z">
+    
+                 <a href="{{ url_for('newsoutlet_login') }}" class="white-button post-filter-btn btn mt-3">تسجيل دخول كصحيفة</a>
+             
+                 <a href="{{ url_for('member_login') }}" class="white-button post-filter-btn btn mt-3">تسجيل دخول كعضو</a>
+             
+                 <br>
+                 <br>
+             
+             </div>
             <fieldset class="form-group">
+                
                 <legend class="border-bottom mb-4"> !مرحبًا مجددًا عضو شيّـك</legend>
                 <div class="form-group">
                     {{ form.email.label(class="form-control-label") }}
@@ -34,14 +45,31 @@
                     {% endif %}
                 </div>              
             </fieldset>
+
             <div class="z">
-                {{ form.submit(class="btn btn-outline-info") }}
+                {{ form.submit(class="btn btn-outline-info white-button post-filter-btn") }}
                 <br>
-                <a class="nav-item nav-link" href="{{ url_for('reset_password_request') }}">نسيت كلمة المرور؟</a> </p>
-
-                <p>لتسجيل دخول منصة إعلامية انقر <a class="nav-item nav-link" href="{{ url_for('newsoutlet_login') }}">هنا!</a> </p>
-
+                <a class="nav-item nav-link mt-2" href="{{ url_for('reset_password_request') }}">نسيت كلمة المرور؟</a>
+        
             </div>
+            
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.post-filter-btn');
+        
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                });
+            });
+        });
+    </script>
+    
 {% endblock content %}
+
+
+

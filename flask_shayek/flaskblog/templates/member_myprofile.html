@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>معلومات الحساب</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title"> اسم العضو: {{ user.username }}</h5>
+        </div>
+    </div>
+</div>
+{% endblock %}

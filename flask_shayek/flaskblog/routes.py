@@ -23,7 +23,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -75,6 +75,9 @@ def fetch_posts_by_user(user_email):
         })
     return posts
 
+def encode_email(email):
+    return email.replace('.', 'dot').replace('@', 'at')
+
 @app.route('/')
 @app.route('/homepage')
 def homepage():
@@ -84,6 +87,7 @@ def homepage():
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
+
 
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
@@ -169,7 +173,7 @@ def upload_video():
 @login_required
 def home():
     user_email = session.get('user_email') 
-    filter_option = request.args.get('filter', 'followed')  # Default to 'all'
+    filter_option = request.args.get('filter', 'followed')  # Default to 'followed'
 
     if user_email:
         user_data = load_user(user_email)
@@ -177,7 +181,6 @@ def home():
         if user_data:
             login_user(user_data)
             newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-            
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
@@ -186,7 +189,6 @@ def home():
             
             else:
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
-                
                 if member_ref:
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
@@ -207,7 +209,6 @@ def home():
                             user_posts = fetch_posts_by_user(newsoutlet_id)
                             if user_posts:
                                 posts.extend(user_posts)
-                                posts.reverse()
 
                     else:
                         posts = fetch_posts()
@@ -216,12 +217,10 @@ def home():
                 
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
-                    return redirect(url_for('Member_login'))
-        
+                    return redirect(url_for('Member_login'))        
         else:
             flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
-            return redirect(url_for('Member_login'))
-    
+            return redirect(url_for('Member_login'))    
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('Member_login'))
@@ -366,6 +365,7 @@ def user_profile(username):
     # Check if the profile belongs to a news outlet
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
+
 
     if newsoutlet_data:
         for uid, userdata in newsoutlet_data.items():
@@ -600,7 +600,7 @@ def verify_request(request_id):
             return redirect(url_for('admin_dashboard'))
     else:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('member_login'))
 
 def fetch_username_from_database(email):
     user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
