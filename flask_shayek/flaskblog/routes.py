@@ -14,11 +14,11 @@ import random
 import string
 import requests
 from itsdangerous import URLSafeTimedSerializer
-#import cv2
-#import numpy as np
-#import matplotlib.pyplot as plt
-#from tensorflow.keras.models import load_model # type: ignore
-#import dlib
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.models import load_model # type: ignore
+import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
@@ -30,12 +30,12 @@ firebase_admin.initialize_app(cred, {
 })
 firebase_database = db.reference()
 # Initializing the face detector
-#detector = dlib.get_frontal_face_detector()
-'''''
+detector = dlib.get_frontal_face_detector()
+
 # Loading the pre-trained model
-model_path = '/Users/lamiafa/Downloads/Delivery 2/ResNet50_Model_Web.h5'
+model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
 model = load_model(model_path)
-'''''
+
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
@@ -84,7 +84,7 @@ def homepage():
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
-'''''
+
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
     frames = []
@@ -122,11 +122,10 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
     cap.release()
     return np.array(processed_frames)
-    '''''
+
 
 @app.route('/shayekModel',methods=['GET','POST'])
 def shayekModel():  
-    '''''
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -144,12 +143,11 @@ def shayekModel():
                 pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
                 return jsonify({'result': pred_label})
             return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
-'''''
+
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
 def upload_video(): 
-    ''''' 
     if request.files:
         video = request.files['video']
         if video.filename != '':
@@ -165,7 +163,6 @@ def upload_video():
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
-          '''''  
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
 @app.route('/home', methods=['GET'])
