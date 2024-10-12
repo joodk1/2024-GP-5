@@ -28,7 +28,7 @@ class RegistrationRequestForm(FlaskForm):
     company_name = StringField('اسم المنصة', validators=[DataRequired()])
     company_docs = FileField('وثائق المنصة', validators=[DataRequired()])
     verified = BooleanField('تم التحقق', default=False)
-    submit = SubmitField('طلب فتح حساب')
+    submit = SubmitField('رفع طلب فتح حساب')
 
     def toggle_verified_visibility(self):
         if hasattr(self, 'verified'):

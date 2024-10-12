@@ -1,76 +1,102 @@
 {% extends "layout.html" %}
 
-
 {% block content %}
-<body>
-    <div class="container mt-5">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>معلومات الحساب</h4>
-            </div>
-            <div class="card-body">
-                <h5 class="card-title">اسم الصحيفة: {{ user_info }}</h5>
-                <div class="newsoutlet-profile">
-                    <p>المتابعين: <span id="follower-count">{{ followers }}</span></p>
+<div class="container mt-5">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>معلومات المنصة الإعلامية</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">اسم المنصة: {{ user_info }}</h5>
+            <br>
+                <div class="dropdown float-right">
+                    <h5 class="card-title d-flex align-items-center dropdown-toggle"
+                        id="followersDropdown" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false" style="cursor: pointer; margin: 0;">
+                        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
+                        قائمة المتابعين: {{ followers|length }}
+                    </h5>
+                    <div class="dropdown-menu" aria-labelledby="followersDropdown">
+                        {% for follower in followers %}
+                            <a class="dropdown-item custom-color" 
+                               href="{{ url_for('user_profile', username=follower) }}">{{ follower }}</a>
+                        {% endfor %}
+                    </div>
                 </div>
-
-                {% if user_info == current_user.username %}
-                    <!-- Profile owner sees the delete post option -->
-                    <script>
-                        function confirmDelete() {
-                            return confirm('متأكد من حذف النشرة؟');
-                        }
-                    </script>
-                {% else %}
-                    {% if session['logged_in'] == True %}
-                        <!-- Visitor sees the follow/unfollow option -->
-                        <div id="follow-buttons">
-                            {% if is_following %}
-                                <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
-                                <button id="follow-btn" class="btn btn-primary" style="display: none;">متابعة</button>
-                            {% else %}
-                                <button id="follow-btn" class="btn btn-primary">متابعة</button>
-                                <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
-                            {% endif %}
-                        </div>
-                        
-                        <div id="notification-buttons">
-                            {% if is_following %}
-                                <!-- Show bell notification buttons only if the user is following the news outlet -->
-                                {% if is_getting_notifications %}
-                                    <button id="unnotify-btn" class="btn btn-danger">🔕 إلغاء الإشعارات</button>
-                                    <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
-                                {% else %}
-                                    <button id="notify-btn" class="btn btn-secondary">🔔 متابعة الإشعارات</button>
-                                    <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
-                                {% endif %}
-                            {% else %}
-                                <!-- Hide notification buttons if not following -->
-                                <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
-                                <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
-                            {% endif %}
-                        </div>                        
-                    {% endif %}
-                {% endif %}
-            </div>
+                <br><br>
+            {% if followed_news_outlets %}
+                <div class="dropdown float-right">
+                    <h5 class="card-title d-flex align-items-center dropdown-toggle" 
+                        id="followedOutletsDropdown" data-toggle="dropdown" aria-haspopup="true" 
+                        aria-expanded="false" style="cursor: pointer; margin: 0;">
+                        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
+                        المنصات المتابَعة: {{ followed_news_outlets|length }}
+                    </h5>
+                    <div class="dropdown-menu" aria-labelledby="followedOutletsDropdown">
+                        {% for outlet in followed_news_outlets %}
+                            <a class="dropdown-item custom-color" 
+                               href="{{ url_for('user_profile', username=outlet) }}">{{ outlet }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h4>المنشورات</h4>
-            </div>
+        {% if user_info == current_user.username %}
+            <!-- Profile owner sees the delete post option -->
+            <script>
+                function confirmDelete() {
+                    return confirm('متأكد من حذف النشرة؟');
+                }
+            </script>
+        {% else %}
+            {% if session['logged_in'] == True %}
+            <div class="text-right">
+                <!-- Visitor sees the follow/unfollow option -->
+                <div id="follow-buttons">
+                    {% if is_following %}
+                        <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
+                        <button id="follow-btn" class="btn btn-primary" style="display: none;">متابعة</button>
+                    {% else %}
+                        <button id="follow-btn" class="btn btn-primary">متابعة</button>
+                        <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
+                    {% endif %}
+                </div>
+                    
+                <div id="notification-buttons">
+                    {% if is_following %}
+                        <!-- Show bell notification buttons only if the user is following the news outlet -->
+                        {% if is_getting_notifications %}
+                            <button id="unnotify-btn" class="btn btn-danger">🔕 إيقاف الإشعارات</button>
+                            <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 تفعيل الإشعارات</button>
+                        {% else %}
+                            <button id="notify-btn" class="btn btn-secondary">🔔 تفعيل الإشعارات</button>
+                            <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إيقاف الإشعارات</button>
+                        {% endif %}
+                    {% else %}
+                        <!-- Hide notification buttons if not following -->
+                        <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 تفعيل الإشعارات</button>
+                        <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إيقاف الإشعارات</button>
+                    {% endif %}
+                </div>
+            </div>                            
+            {% endif %}
+        {% endif %}
+    </div>
 
-            {% for post in posts %}
-                <article class="media content-section">
-                    <div class="media-body">
-                        <div class="article-metadata">
-                            <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
-                            <small class="text-muted">{{ post.timestamp }}</small>
-                        </div>
-                        <br>
-                        <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                        <p class="article-content">{{ post.content }}</p>
-
+        <div class="card-header">
+            <h4>المنشورات</h4>
+        </div>
+        {% for post in posts %}
+            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+                <div class="media-body">
+                    <div class="article-metadata text-right">
+                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                        <small class="text-muted">{{ post.timestamp }}</small>
+                    </div> 
+                    <br>
+                    <h3 class="article-title">{{ post.title }}</h3>
+                    <p class="article-content">{{ post.content }}</p>
                         {% if post.media %}
                             {% set file_ext = post.media.split('.')[-1].lower() %}
                             {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
@@ -82,16 +108,15 @@
                             {% endif %}
                         {% endif %}
 
-                        <!-- Only show delete button if the logged-in user is the post author -->
-                        {% if user_info == current_user.username %}
-                            <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                                <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
+                    <!-- Only show delete button if the logged-in user is the post author -->
+                    {% if user_info == current_user.username %}
+                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
+                            <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
     </div>
 
     <script>
@@ -203,5 +228,5 @@
         });
     </script>
     
-</body>
+</div>
 {% endblock %}

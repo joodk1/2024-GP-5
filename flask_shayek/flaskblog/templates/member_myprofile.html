@@ -4,10 +4,27 @@
 <div class="container mt-5">
     <div class="card mb-4">
         <div class="card-header">
-            <h4>معلومات الحساب</h4>
+            <h4>معلومات حسابي</h4>
         </div>
         <div class="card-body">
-            <h5 class="card-title"> اسم العضو: {{ user.username }}</h5>
+            <h5 class="card-title">اسم العضو: {{ user_info }}</h5>
+
+            {% if followed_news_outlets %}
+                <div class="dropdown float-right">
+                    <h5 class="card-title d-flex align-items-center dropdown-toggle" 
+                        id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" 
+                        aria-expanded="false" style="cursor: pointer; margin: 0;">
+                        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
+                        المنصات المتابَعة: {{ followed_news_outlets|length }}
+                    </h5>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {% for outlet in followed_news_outlets %}
+                            <a class="dropdown-item custom-color" href="{{ url_for('user_profile', username=outlet) }}">{{ outlet }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
         </div>
     </div>
 </div>

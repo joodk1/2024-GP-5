@@ -211,12 +211,10 @@ a.article-title:hover {
   line-height: 1; 
 }
 
-
 .fa-bell {
   position: relative;
   font-size: 18px; 
 }
-
 
 .switch-button {
   background-color: white;
@@ -250,4 +248,18 @@ a.article-title:hover {
   background-color: var(--dark-green) !important;
   color: white !important;
   border-color: var(--dark-green) !important;
+}
+
+.dropdown-toggle i {
+  transition: transform 0.2s;
+  color: var(--dark-green);
+}
+
+.dropdown.show .dropdown-toggle i {
+  transform: rotate(180deg);
+  color: var(--light-green);
+}
+
+.custom-color {
+  color: var(--dark-green);
 }

@@ -6,8 +6,10 @@
     {% for post in posts %}
         <article class="media content-section">
             <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                <div class="article-metadata text-right">
+                    {% if post.author %}
+                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                    {% endif %}
                     <small class="text-muted">{{ post.timestamp }}</small>
                 </div> 
                 <br>
