@@ -28,17 +28,19 @@
         });
     </script>  
     
-
     {% for post in posts %}
-        <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div>
-                <br>
-                <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
-                <p class="article-content">{{ post.content }}
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                <small class="text-muted">{{ post.timestamp }}</small>
+            </div>
+            <br>
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+                <div>
+                    <h3 class="article-title">{{ post.title }}</h3>
+                    <p class="article-content">{{ post.content }}</p>
+                    
                     {% if post.media %}
                         {% set file_ext = post.media.split('.')[-1].lower() %}
                         {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
@@ -57,8 +59,11 @@
                             <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                         {% endif %}
                     {% endif %}
-                </p>
-            </div>
-        </article>     
+                </div>
+            </a>
+        </div>
+    </article>
+    
     {% endfor %}
+
 {% endblock %}

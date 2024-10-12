@@ -32,6 +32,23 @@
                                 <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
                             {% endif %}
                         </div>
+                        
+                        <div id="notification-buttons">
+                            {% if is_following %}
+                                <!-- Show bell notification buttons only if the user is following the news outlet -->
+                                {% if is_getting_notifications %}
+                                    <button id="unnotify-btn" class="btn btn-danger">🔕 إلغاء الإشعارات</button>
+                                    <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
+                                {% else %}
+                                    <button id="notify-btn" class="btn btn-secondary">🔔 متابعة الإشعارات</button>
+                                    <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
+                                {% endif %}
+                            {% else %}
+                                <!-- Hide notification buttons if not following -->
+                                <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
+                                <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
+                            {% endif %}
+                        </div>                        
                     {% endif %}
                 {% endif %}
             </div>
@@ -78,9 +95,10 @@
 
     <script>
         $(document).ready(function() {
+            // Follow News Outlet
             $('#follow-btn').click(function(e) {
                 e.preventDefault(); 
-
+    
                 $.ajax({
                     url: '{{ url_for("follow_newsoutlet", username=user_info) }}',
                     type: 'POST',
@@ -88,24 +106,26 @@
                         useremail: '{{ useremail }}'
                     },
                     success: function(response) {
-                        console.log(response); 
+                        console.log(response);
                         if (response.success) {
-                            $('#follower-count').text(response.follower_count);
+                            $('#follower-count').text(response.follower_count); // Update follower count
                             $('#follow-btn').hide();
-                            $('#unfollow-btn').show();
+                            $('#unfollow-btn').show(); // Show unfollow button
+                            $('#notify-btn').show(); // Show notification bell when following
                         } else {
-                            alert(response.message);
+                            alert(response.message); // Show error message
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error); 
+                        console.error('AJAX error:', status, error);
                     }
                 });
             });
-
+    
+            // Unfollow News Outlet
             $('#unfollow-btn').click(function(e) {
                 e.preventDefault(); 
-
+    
                 $.ajax({
                     url: '{{ url_for("unfollow_newsoutlet", username=user_info) }}',
                     type: 'POST',
@@ -113,21 +133,74 @@
                         useremail: '{{ useremail }}'
                     },
                     success: function(response) {
-                        console.log(response); 
+                        console.log(response);
                         if (response.success) {
-                            $('#follower-count').text(response.follower_count);
+                            $('#follower-count').text(response.follower_count); // Update follower count
                             $('#unfollow-btn').hide();
-                            $('#follow-btn').show();
+                            $('#follow-btn').show(); // Show follow button
+                            $('#notify-btn').hide(); // Hide notification bell when unfollowing
+                            $('#unnotify-btn').hide(); // Hide unnotify button as well
                         } else {
-                            alert(response.message);
+                            alert(response.message); // Show error message
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error); 
+                        console.error('AJAX error:', status, error);
+                    }
+                });
+            });
+    
+        // Enable Notifications
+        $('#notify-btn').click(function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '{{ url_for("notify_newsoutlet", username=user_info) }}',
+                    type: 'POST',
+                    data: {
+                        useremail: '{{ useremail }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#notify-btn').hide();
+                            $('#unnotify-btn').show(); // Show unnotify button
+                            alert(response.message); // Show success message
+                        } else {
+                            alert(response.message); // Show error message
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error);
+                    }
+                });
+            });
+
+            // Disable Notifications
+            $('#unnotify-btn').click(function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: '{{ url_for("unnotify_newsoutlet", username=user_info) }}',
+                    type: 'POST',
+                    data: {
+                        useremail: '{{ useremail }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#unnotify-btn').hide();
+                            $('#notify-btn').show(); // Show notify button
+                            alert(response.message); // Show success message
+                        } else {
+                            alert(response.message); // Show error message
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error);
                     }
                 });
             });
         });
     </script>
+    
 </body>
 {% endblock %}

@@ -1,20 +1,23 @@
 {% extends "layout.html" %}
-
 {% block content %}
-
-    
-    {% for post in posts %}
-        <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
-                <br>
-                <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
-                <h3 class="article-title">{{ post.title }}</h3>
-                <p class="article-content">{{ post.content }}
-                    {% if post.media %}
+<button onclick="goBack()" class="btn form-buttons">&#8592; عودة </button>
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+<br>
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+                <small class="text-muted">{{ post.timestamp }}</small>
+            </div>
+     
+        
+            <h3 class="article-title">{{ post.title }}</h3>
+            <p class="article-content">{{ post.content }}
+                {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
                     {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
                         <video class="post-video" controls>
@@ -32,8 +35,7 @@
                         <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
-            </div>
-        </a>
-        </article>
-    {% endfor %}
+            </p>
+        </div>
+    </article>
 {% endblock %}

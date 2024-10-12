@@ -53,7 +53,7 @@ p {
 }
 
 .article-title {
-  color: #444444;
+  color:  var(--dark-green);
   margin: 4px;
 }
 
@@ -73,10 +73,6 @@ a.article-title:hover {
   border-bottom: 1px solid #e3e3e3
 }
 
-.article-metadata a:hover {
-  color: var(--light-green);
-  text-decoration: none;
-}
 
 .account-info {
   float: left;
@@ -194,4 +190,29 @@ a.article-title:hover {
   background-color: var(--dark-green) !important;
   color: white !important;
   border-color: var(--dark-green) !important;
+}
+
+.dropdown-toggle::after {
+  display: none;
+}
+
+.notification-count {
+  position: absolute;
+  top: 12px;   
+  right: 14px;
+  transform: translate(50%, -50%);
+  background-color: red;
+  color: white; 
+  padding: 3px 6px; 
+  border-radius: 50%; 
+  font-size: 12px;
+  min-width: 16px; 
+  text-align: center; 
+  line-height: 1; 
+}
+
+
+.fa-bell {
+  position: relative;
+  font-size: 18px; 
 }

@@ -10,6 +10,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
       
     {% if title %}
     <title>شيّـــك - {{ title }}</title>
@@ -48,6 +52,38 @@
           {% if session['logged_in'] == True %}
               <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
               <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+
+<!-- Notification Bell Icon -->
+<div class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <i class="fa fa-bell"></i>
+    {% if notifications and notifications|length > 0 %}
+      <span class="badge badge-danger notification-count">{{ notifications|length }}</span>
+    {% endif %}
+  </a>
+  <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationsDropdown" style="max-height: 300px; overflow-y: auto; width: 300px; transform: translateX(-40px);">
+    {% if notifications %}
+      <ul class="list-group">
+        {% for notification in notifications %}
+        <li class="list-group-item notification-item" data-href="{{ url_for('post', post_id=notification.post_id) }}" style="cursor: pointer;">
+            <p>نشرة جديدة من {{ notification.newsoutlet }}</p>
+            <p>بعنوان: {{ notification.post_title }}</p>
+            <p>{{ notification.timestamp }}</p>
+            <div class="float-right">
+              {% if not notification.is_read %}
+                <button class="btn btn-sm btn-primary" onclick="markAsRead('{{ notification.notification_key }}')">تحديد كمقروء</button>
+              {% endif %}
+              <button class="btn btn-sm btn-danger" onclick="deleteNotification('{{ notification.notification_key }}')">حذف</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="dropdown-item">لايوجد إشعارات</p>
+    {% endif %}
+  </div>
+</div>
+            </div>
           {% else %}
               <a class="nav-item nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
           {% endif %}
@@ -79,5 +115,58 @@
       <span>تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
     </div>
   </footer>
+  <script>
+    var firebaseConfig = {
+    apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
+    authDomain: "shayek-560ec.firebaseapp.com",
+    databaseURL: "https://shayek-560ec-default-rtdb.firebaseio.com",
+    projectId: "shayek-560ec",
+    storageBucket: "shayek-560ec.appspot.com",
+    messagingSenderId: "377837381829",
+    appId: "1:377837381829:web:d6594a9e9f6af83c1468ac",
+    measurementId: "G-PKCVFN45WE"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+// Initialize Firestore
+var firestore = firebase.firestore();
+
+function markAsRead(notification_key) {
+    if (!notification_key) {
+        console.error("Notification key is missing.");
+        return;
+    }
+    console.log("Notification Key:", notification_key);  // Debugging
+    $.post('/notification/read/' + notification_key, function(response) {
+        if (response.success) {
+            location.reload();  
+        } else {
+            alert(response.message);
+        }
+    });
+}
+
+
+    function deleteNotification(notification_key) {
+      if (!notification_key) {
+        console.error("Notification key is missing.");
+        return;
+      }
+
+      $.post('/notification/delete/' + notification_key, function(response) {
+        if (response.success) {
+          location.reload();  
+        } else {
+          alert(response.message);
+        }
+      });
+    }
+        // Add click event to the entire notification item
+      document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function() {
+            window.location.href = this.getAttribute('data-href');
+        });
+    });
+  </script>
 </body>
 </html>

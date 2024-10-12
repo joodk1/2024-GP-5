@@ -45,7 +45,8 @@
                 <small class="text-muted">{{ post.timestamp }}</small>
             </div> 
             <br>
-            <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+            <h3 class="article-title">{{ post.title }}</h3>
             <p class="article-content">{{ post.content }}
                 {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
@@ -66,6 +67,7 @@
                     {% endif %}
                 {% endif %}
             </p>
+            </a>
             {% if post.author_email == user_id %}
                 <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
                     <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
