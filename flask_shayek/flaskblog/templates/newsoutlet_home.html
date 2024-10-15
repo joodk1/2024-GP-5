@@ -63,6 +63,12 @@
                     {% endif %}
                 {% endif %}
             </p>
+
+        </p>
+        <div class="post-comments">
+            <i class="far fa-comment"></i>
+            <span>{{ post.count }}</span>
+        </div>
             </a>
             {% if post.author_email == user_id %}
                 <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">

@@ -114,6 +114,11 @@
                             <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
                         </form>
                     {% endif %}
+                </p>
+                <div class="post-comments">
+                    <i class="far fa-comment"></i>
+                    <span>{{ post.count }}</span>
+                </div>
                 </div>
             </article>
         {% endfor %}

@@ -23,7 +23,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -35,70 +35,80 @@ detector = dlib.get_frontal_face_detector()
 # Loading the pre-trained model
 model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
 model = load_model(model_path)
-
-from datetime import datetime
-
 def parse_timestamp(timestamp):
     try:
         return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
     except (ValueError, TypeError):
         return datetime(1970, 1, 1)
-
+    
 def fetch_posts():
-    posts_ref = db.reference('posts')
+    posts_ref = db.reference('postss').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
+    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
+    posts = []
+    
+    for post_id, post_data in reversed_posts.items():
+        count = 0
+        comments = post_data.get('comment', {})
+        formatted_comments = []   
+        if isinstance(comments, dict):
+            for comment_id, comment_data in comments.items():
+                count +=1
+                if comment_data:
+                    replies = comment_data.get('replies', {})
+                    formatted_replies = []
+                    if isinstance(replies, dict):
+                        for reply_id, reply in replies.items():
 
-    if not posts_snapshot:
-        return []
-
-    sorted_posts = dict(
-        sorted(posts_snapshot.items(), key=lambda x: parse_timestamp(x[1].get('timestamp')), reverse=True)
-    )
-
-    posts = [
-        {
+                            formatted_reply = {
+                                'author': reply.get('author', ''),
+                                'author_email': reply.get('author_email', ''),
+                                'body': reply.get('body', ''),
+                                'reply_id': reply.get('reply_id', ''),
+                                'timestamp': reply.get('timestamp', '')
+                            }
+                            formatted_replies.append(formatted_reply)    
+                    comment_data['replies'] = formatted_replies   
+                formatted_comments.append(comment_data)
+        posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
-            'media': post_data.get('media_url')
-        }
-        for post_id, post_data in sorted_posts.items()
-    ]
-
+            'media': post_data.get('media_url'),
+            'comments': formatted_comments,
+            'count': count
+        })
     return posts
 
 posts = fetch_posts()
 
 def fetch_posts_by_user(user_email):
-    posts_ref = db.reference('posts')
+    posts_ref = db.reference('postss').order_by_child('author_email').equal_to(user_email)
     posts_snapshot = posts_ref.get()
-
     if not posts_snapshot:
         return []
 
-    user_posts = {
-        post_id: post_data for post_id, post_data in posts_snapshot.items()
-        if post_data.get('author_email') == user_email
-    }
-
-    sorted_posts = dict(sorted(user_posts.items(), key=lambda x: parse_timestamp(x[1].get('timestamp')), reverse=True))
-
-    posts = [
-        {
+    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
+    posts = []
+    for post_id, post_data in reversed_posts.items():
+        count = 0
+        comments = post_data.get('comment', {})
+        if isinstance(comments, dict):
+            for comment_id, comment_data in comments.items():
+                count +=1
+        posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
-            'media': post_data.get('media_url')
-        }
-        for post_id, post_data in sorted_posts.items()
-    ]
-
+            'media': post_data.get('media_url'),
+            'count': count
+        })
     return posts
 
 def encode_email(email):
@@ -113,7 +123,6 @@ def homepage():
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
-
 
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
@@ -192,6 +201,7 @@ def upload_video():
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
+        
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
 @app.route('/home', methods=['GET'])
@@ -206,13 +216,14 @@ def home():
         if user_data:
             login_user(user_data)
             newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
                 posts = fetch_posts()
-                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username, user_id=user_data.email)
+                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username)
             
-            else:
+            else: 
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
                 if member_ref:
                     user_info = list(member_ref.values())[0]
@@ -234,7 +245,6 @@ def home():
                             user_posts = fetch_posts_by_user(newsoutlet_id)
                             if user_posts:
                                 posts.extend(user_posts)
-                        posts = sorted(posts, key=lambda x: parse_timestamp(x['timestamp']), reverse=True)
 
                     else:
                         posts = fetch_posts()
@@ -704,7 +714,7 @@ def verify_request(request_id):
             email = request_data['email']
             subject = ""
             body = ""
-            password_hash = generate_password_hash(request_data['password'])
+            password_hash = generate_password_hash(request_data['password']) 
 
             if 'decline' in request.form:
                 ref_request.update({'status': 'declined', 'password': password_hash})
@@ -777,10 +787,10 @@ def submit_post():
 
     bucket = storage.bucket()
 
-    media_url = None
+    media_url = None 
     if media and media.filename:
         filename = secure_filename(media.filename)
-        blob = bucket.blob(f'posts/{username}/{filename}')
+        blob = bucket.blob(f'postss/{username}/{filename}')
         content_type = media.content_type
         if not content_type:
             extension = filename.split('.')[-1].lower()
@@ -801,17 +811,18 @@ def submit_post():
 
     timestamp = datetime.now()
     formatted_timestamp = timestamp.strftime("%b %d, %Y %I:%M%p")
-
+    formatted_comment = ""
     post_data = {
         'title': title,
         'body': body,
         'media_url': media_url,
         'author': username,
         'author_email': user_email,
-        'timestamp': formatted_timestamp
+        'timestamp': formatted_timestamp,
+        'comment': formatted_comment
     }
 
-    post_ref= db.reference('posts').push(post_data)
+    post_ref= db.reference('postss').push(post_data)
     post_id = post_ref.key
     
     notifications = list(user_ref.values())[0].get('notifications', [])
@@ -852,7 +863,7 @@ def delete_post(post_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    post_ref = db.reference(f'posts/{post_id}')
+    post_ref = db.reference(f'postss/{post_id}')
     post_ref.delete()
 
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
@@ -918,6 +929,9 @@ def admin_dashboard():
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح، الرجاء تسجيل الدخول كمسؤول', 'danger')
         return redirect(url_for('member_login'))
     
+def encode_email(email):
+    return email.replace('.', 'dot').replace('@', 'at')
+
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow_newsoutlet(username):
@@ -980,7 +994,7 @@ def unfollow_newsoutlet(username):
 
     else:
         return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
-    
+ 
 @app.route('/notify/<username>', methods=['POST'])
 @login_required
 def notify_newsoutlet(username):
@@ -1051,7 +1065,7 @@ def fetch_notifications(user_email):
     user_email = session['user_email']
     if notifications_ref:
         for notification_key, notification_data in all_notifications.items():
-            post_exists = db.reference('posts').child(notification_data.get('post_id')).get() is not None
+            post_exists = db.reference('postss').child(notification_data.get('post_id')).get() is not None
             # show notifications only if they're unread and the posts still exist
             if post_exists and not notification_data.get('is_read', False): 
                  notifications.append({
@@ -1064,6 +1078,7 @@ def fetch_notifications(user_email):
          })
     notifications.reverse()
     return notifications
+
 
 @app.route('/notification/read/<notification_key>', methods=['POST'])
 @login_required
@@ -1090,6 +1105,8 @@ def delete_notification(notification_key):
     
     return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
 
+
+
 @app.route('/post/<string:post_id>')
 def post(post_id):
     posts = fetch_posts()  
@@ -1097,6 +1114,7 @@ def post(post_id):
 
     if not post:
         abort(404)  
+
     return render_template('post.html', post=post)
 
 @app.context_processor
@@ -1106,3 +1124,123 @@ def inject_notifications():
     else:
         notifications = [] 
     return {'notifications': notifications} 
+
+@app.route('/post/<string:post_id>/add_comment', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    user_email = current_user.get_id()
+
+    if not user_email:
+        flash('الوصول غير مصرح به', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        flash('لم يتم العثور على المستخدم', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    username = list(user_ref.values())[0].get('username')
+    comment_body = request.form['comment']
+
+    comment_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%b %d, %Y %I:%M%p")
+    formatted_replies = ""
+    comment_data = {
+        'comment_id': comment_id,
+        'author': username,
+        'author_email': user_email,
+        'body': comment_body,
+        'timestamp': timestamp,
+        'replies': formatted_replies
+    }
+
+    db.reference(f'postss/{post_id}/comment').child(comment_id).set(comment_data)
+
+    flash('تمت إضافة التعليق بنجاح', 'success')
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/reply/<string:comment_id>', methods=['POST'])
+@login_required
+def reply_comment(post_id, comment_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('الوصول غير مصرح به', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+    if not user_ref:
+        user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        flash('لم يتم العثور على المستخدم', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    username = list(user_ref.values())[0].get('username')
+    reply_body = request.form['reply']
+
+    reply_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%b %d, %Y %I:%M%p")
+
+    reply_data = {
+        'reply_id': reply_id,
+        'author': username,
+        'author_email': user_email,
+        'body': reply_body,
+        'timestamp': timestamp
+    }
+
+    db.reference(f'postss/{post_id}/comment/{comment_id}/replies').child(reply_id).set(reply_data)
+
+    flash('تمت إضافة الرد بنجاح', 'success')
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/comment/<string:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(post_id, comment_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    comment_ref = db.reference(f'postss/{post_id}/comment/{comment_id}').get()
+    if not comment_ref:
+        flash('<i class="fas fa-times-circle me-3"></i> التعليق غير موجود', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    if comment_ref['author_email'] != user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا التعليق', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    db.reference(f'postss/{post_id}/comment/{comment_id}').delete()
+    flash('<i class="fas fa-check-circle me-3"></i> تم حذف التعليق بنجاح', 'success')
+
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/reply/<string:comment_id>/delete/<string:reply_id>', methods=['POST'])
+@login_required
+def delete_reply(post_id, comment_id, reply_id):
+    user_email = current_user.get_id()
+    
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    reply_ref = db.reference(f'postss/{post_id}/comment/{comment_id}/replies/{reply_id}')
+    reply_data = reply_ref.get()
+
+    if not reply_data:
+        flash('<i class="fas fa-times-circle me-3"></i> الرد غير موجود', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    if reply_data['author_email'] != user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا الرد', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    reply_ref.delete()
+    flash('<i class="fas fa-check-circle me-3"></i> تم حذف الرد بنجاح', 'success')
+
+    return redirect(url_for('post', post_id=post_id))

@@ -5,6 +5,24 @@
     function goBack() {
         window.history.back();
     }
+
+    function toggleReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function confirmDelete(deleteUrl) {
+        console.log(deleteUrl)
+    if (confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+        document.body.appendChild(form);
+        form.submit();
+    } else {
+        return false; 
+    }
+}
 </script>
 <br>
     <article class="media content-section">
@@ -27,6 +45,74 @@
                     {% endif %}
                 {% endif %}
             </p>
+            <div class="post-comments">
+                <i class="far fa-comment"></i>
+                <span>{{ post.count }}</span>
+            </div>
         </div>
     </article>
-{% endblock %}
+
+    <div class="comment-section">
+        <h4>تعليقات</h4>
+    
+        {% if current_user.is_authenticated %}
+        <form action="{{ url_for('add_comment', post_id=post.post_id) }}" method="POST">
+            <textarea name="comment" placeholder="Add a comment" rows="3" required></textarea>
+            <button type="submit">أضف تعليق</button>
+        </form>
+        {% else %}
+        <div class="login-prompt">
+            أنت بحاجة إلى  <a href="{{ url_for('newsoutlet_login') }}">تسجيل الدخول كمنصة اعلامية</a> او <a href="{{ url_for('member_login') }}">تسجيل الدخول كعضو</a> لإضافة تعليق.
+        </div>
+        {% endif %}
+    
+        <ul class="comment-list">
+            {% for comment in post.comments %}
+            <li class="comment">
+                <div class="comment-header">
+                    <strong>{{ comment.author }}</strong>
+                    <small>{{ comment.timestamp }}</small>
+                </div>
+                <p>{{ comment.body }}</p>
+                {% if current_user.is_authenticated %}
+                <button class="reply-button" onclick="toggleReplyForm('{{ comment.comment_id }}')">رد</button>
+                {% endif %}
+        
+                {% if comment.author_email == current_user.get_id() %}
+                <form action="{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST" style="display:inline;">
+                    <button type="button" class="delete-button" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
+                </form>
+                {% endif %}
+        
+                <div class="reply-form" id="reply-form-{{ comment.comment_id }}" style="display:none;">
+                    <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST">
+                        <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
+                        <button type="submit">أضف الرد</button>
+                    </form>
+                </div>
+        
+                <ul class="reply-list">
+                    {% for reply in comment.replies %}
+                    <li class="reply">
+                        <div class="reply-header">
+                            <strong>{{ reply.author }}</strong>
+                            <small>{{ reply.timestamp }}</small>
+                        </div>
+                        <p>{{ reply.body }}</p>
+        
+                        {% if reply.author_email == current_user.get_id() %}
+                        <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
+                            <button type="button" class="delete-button" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </li>
+            <hr>
+            {% endfor %}
+        </ul>
+        
+    </div>
+    {% endblock %}
+    

@@ -263,3 +263,125 @@ a.article-title:hover {
 .custom-color {
   color: var(--dark-green);
 }
+
+
+.comment, .reply {
+  margin-right: 20px;
+  }
+  .login-prompt {
+      background-color: #f8f9fa;
+      padding: 10px;
+      margin-top: 20px;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 14px;
+  }
+  .login-prompt a {
+      color: #007bff;
+      text-decoration: none;
+  }
+  .login-prompt a:hover {
+      text-decoration: underline;
+  }
+  form {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+  }
+  textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      resize: vertical;
+  }
+  button {
+      padding: 10px 15px;
+      background-color: #4F792A;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      align-self: flex-start;
+  }
+  button:hover {
+      background-color: #3f5e22;
+  }
+ 
+  .reply {
+      margin-left: 40px;
+  }
+  .comment-section {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .comment-list, .reply-list {
+  list-style: none;
+  padding: 0;
+  }
+
+  
+  .comment-header {
+  display: flex;
+  align-items: center;
+  }
+  .comment-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px
+  }
+  .comment-section {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+
+
+  .comment-header, .reply-header {
+      justify-content: space-between;
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+  }
+  .comment p, .reply p {
+  margin-top: 5px;
+  font-size: 16px;
+  }
+  .comment, .reply {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #f8f9fa;
+  }
+  
+
+  .reply-button:hover {
+  background-color: #3f5e22;
+  }
+
+  .reply-form {
+      margin-top: 10px; /* Space between reply button and reply form */
+  }
+  .delete-button {
+  background-color:#4F792A;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-top: 5px;
+  }
+  .delete-button:hover {
+  background-color: #3f5e22;
+  }
