@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model # type: ignore
 import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
 
 # Firebase Admin SDK Initialization
 cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
@@ -34,13 +35,41 @@ detector = dlib.get_frontal_face_detector()
 # Loading the pre-trained model
 #model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
 #model = load_model(model_path)
-
+def parse_timestamp(timestamp):
+    try:
+        return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
+    except (ValueError, TypeError):
+        return datetime(1970, 1, 1)
+    
 def fetch_posts():
-    posts_ref = db.reference('posts').order_by_child('timestamp')
+    posts_ref = db.reference('postss').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
     reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
     posts = []
+    
     for post_id, post_data in reversed_posts.items():
+        count = 0
+        comments = post_data.get('comment', {})
+        formatted_comments = []   
+        if isinstance(comments, dict):
+            for comment_id, comment_data in comments.items():
+                count +=1
+                if comment_data:
+                    replies = comment_data.get('replies', {})
+                    formatted_replies = []
+                    if isinstance(replies, dict):
+                        for reply_id, reply in replies.items():
+
+                            formatted_reply = {
+                                'author': reply.get('author', ''),
+                                'author_email': reply.get('author_email', ''),
+                                'body': reply.get('body', ''),
+                                'reply_id': reply.get('reply_id', ''),
+                                'timestamp': reply.get('timestamp', '')
+                            }
+                            formatted_replies.append(formatted_reply)    
+                    comment_data['replies'] = formatted_replies   
+                formatted_comments.append(comment_data)
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
@@ -48,14 +77,16 @@ def fetch_posts():
             'timestamp': post_data.get('timestamp'),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
-            'media': post_data.get('media_url')
+            'media': post_data.get('media_url'),
+            'comments': formatted_comments,
+            'count': count
         })
     return posts
 
 posts = fetch_posts()
 
 def fetch_posts_by_user(user_email):
-    posts_ref = db.reference('posts').order_by_child('author_email').equal_to(user_email)
+    posts_ref = db.reference('postss').order_by_child('author_email').equal_to(user_email)
     posts_snapshot = posts_ref.get()
     if not posts_snapshot:
         return []
@@ -63,6 +94,11 @@ def fetch_posts_by_user(user_email):
     reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
     posts = []
     for post_id, post_data in reversed_posts.items():
+        count = 0
+        comments = post_data.get('comment', {})
+        if isinstance(comments, dict):
+            for comment_id, comment_data in comments.items():
+                count +=1
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
@@ -70,7 +106,8 @@ def fetch_posts_by_user(user_email):
             'timestamp': post_data.get('timestamp'),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
-            'media': post_data.get('media_url')
+            'media': post_data.get('media_url'),
+            'count': count
         })
     return posts
 
@@ -148,7 +185,7 @@ def shayekModel():
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
-def upload_video():  
+def upload_video(): 
     if request.files:
         video = request.files['video']
         if video.filename != '':
@@ -164,7 +201,7 @@ def upload_video():
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
-            
+        
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
 @app.route('/home', methods=['GET'])
@@ -185,7 +222,7 @@ def home():
                 posts = fetch_posts()
                 return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username)
             
-            else:
+            else: 
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
                 if member_ref:
                     user_info = list(member_ref.values())[0]
@@ -336,28 +373,93 @@ def profile():
         return redirect(url_for('newsoutlet_login'))
 
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
-    
-    if user_ref:
-        user_type = 'newsoutlet'
-    else:
+    user_type = 'newsoutlet' if user_ref else 'member'
+
+    if user_type == 'member':
         user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
         if not user_ref:
             flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
             return redirect(url_for('member_login'))
-        user_type = 'member'
 
     username = list(user_ref.values())[0].get('username')
     posts = fetch_posts_by_user(user_email)
 
     if user_type == 'newsoutlet':
-        return render_template('newsoutlet_profile.html', user_info=username, posts=posts)
-    else:
-        return render_template('member_profile.html', user_info=username)
+        news_outlet_email = current_user.email  
+        news_outlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(news_outlet_email).get()
 
-@app.route('/profile/<username>')
+        followers_usernames = []
+
+        if news_outlet_ref:
+            for news_outlet in news_outlet_ref.values():
+                followers = news_outlet.get('followers', [])
+                
+                for follower in followers:
+                    # Ensure follower is not None and is a dictionary
+                    if isinstance(follower, dict):
+                        member_email = follower.get('member_id')
+                        if not member_email:
+                            print("Warning: Missing 'member_id' in follower data.")
+                            continue
+
+                        # Query Firebase by email from 'users' or 'newsoutlet'
+                        result = db.reference('users').order_by_child('email').equal_to(member_email).get()
+                        if not result:
+                            result = db.reference('newsoutlet').order_by_child('email').equal_to(member_email).get()
+
+                        if result:
+                            user_data = next(iter(result.values()), None)
+                            if user_data:
+                                followers_usernames.append(user_data.get('username'))
+                            else:
+                                print(f"No username found for email: {member_email}")
+                        else:
+                            print(f"No user found with email: {member_email}")
+                    else:
+                        print(f"Skipping invalid follower entry: {follower}")
+
+                print("Followers' Usernames:", followers_usernames)
+
+        followed_news_outlets = []
+        followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
+
+        if followed_users_ref:
+            for data in followed_users_ref.values():
+                email = data.get('newsoutlet_id')
+                if email:
+                    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+                    if user_ref:
+                        followed_news_outlets.append(list(user_ref.values())[0].get('username'))
+
+        return render_template('newsoutlet_myprofile.html', 
+                            user_info=username, 
+                            followers=followers_usernames, 
+                            followed_news_outlets=followed_news_outlets, 
+                            posts=posts)
+
+    else:
+        followed_news_outlets = []
+        followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
+
+        if followed_users_ref:
+            for data in followed_users_ref.values():
+                email = data.get('newsoutlet_id')
+                if email:
+                    user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+                    if user_ref:
+                        followed_news_outlets.append(list(user_ref.values())[0].get('username'))
+
+        return render_template(
+            'member_myprofile.html',
+            user_info=username,
+            followed_news_outlets=followed_news_outlets
+        )
+
+@app.route('/profile/<username>') 
 def user_profile(username):
     user = None
     current_user_email = session.get('user_email')
+
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
 
@@ -369,49 +471,113 @@ def user_profile(username):
                     'id': userdata.get('id'),
                     'username': userdata.get('username'),
                     'email': userdata.get('email'),
-                    'followers': userdata.get('followers', [])
+                    'followers': userdata.get('followers', []),
+                    'notifications': userdata.get('notifications', [])
                 }
-                useremail = user.get('email')
-                posts = fetch_posts_by_user(user['email'])
 
-                current_followers = user.get('followers', [])
+                useremail = user['email']
+                posts = fetch_posts_by_user(useremail)
+                current_followers = user['followers']
+                current_notifications = user['notifications']
+                print(current_notifications)
 
-                if isinstance(current_followers, list):
-                    is_following = any(
-                        isinstance(follower, dict) and follower.get('member_id') == current_user_email
-                        for follower in current_followers
-                    )
-                else:
-                    is_following = False  
+                followers_usernames = []
+                for follower in current_followers:
+                    # Ensure follower is not None and is a dictionary
+                    if isinstance(follower, dict):
+                        member_email = follower.get('member_id')
+                        if not member_email:
+                            print("Warning: Missing 'member_id' in follower data.")
+                            continue
 
-                followers_count = len([follower for follower in current_followers if isinstance(follower, dict)]) if isinstance(current_followers, list) else 0
+                        # Query Firebase by email from 'users' or 'newsoutlet'
+                        result = db.reference('users').order_by_child('email').equal_to(member_email).get()
+                        if not result:
+                            result = db.reference('newsoutlet').order_by_child('email').equal_to(member_email).get()
+
+                        if result:
+                            user_data = next(iter(result.values()), None)
+                            if user_data:
+                                followers_usernames.append(user_data.get('username'))
+                            else:
+                                print(f"No username found for email: {member_email}")
+                        else:
+                            print(f"No user found with email: {member_email}")
+                    else:
+                        print(f"Skipping invalid follower entry: {follower}")
+
+                print("Followers' Usernames:", followers_usernames)
+
+                is_following = any(
+                    isinstance(follower, dict) and follower.get('member_id') == current_user_email
+                    for follower in current_followers
+                ) if isinstance(current_followers, list) else False
+
+                is_getting_notifications = any(
+                    isinstance(notification, dict) and notification.get('member_id') == current_user_email
+                    for notification in current_notifications
+                )
+
+                followed_news_outlets = []
+                followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user_email).get()
+
+                if followed_users_ref:
+                    for data in followed_users_ref.values():
+                        email = data.get('newsoutlet_id')
+                        if email:
+                            user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+                            if user_ref:
+                                followed_news_outlets.append(list(user_ref.values())[0].get('username'))
+
+                followers_count = len([f for f in current_followers if isinstance(f, dict)])
 
                 return render_template(
                     'newsoutlet_profile.html',
                     user_info=username,
                     posts=posts,
                     useremail=useremail,
-                    followers=followers_count,
-                    is_following=is_following
+                    followers=followers_usernames,
+                    followers_count=followers_count,
+                    followed_news_outlets=followed_news_outlets,
+                    is_following=is_following,
+                    is_getting_notifications=is_getting_notifications
                 )
 
     # Check if the profile belongs to a member
-    if not user:
-        member_ref = firebase_database.child('users')
-        member_data = member_ref.get()
-        if member_data:
-            for uid, userdata in member_data.items():
-                if userdata.get('username') == username:
-                    user = {
-                        'id': userdata.get('id'),
-                        'username': userdata.get('username'),
-                        'email': userdata.get('email')
-                    }
-                    username = user.get('username')
-                    return render_template('member_profile.html', user_info=username)
+    member_ref = firebase_database.child('users')
+    member_data = member_ref.get()
 
+    if member_data:
+        for uid, userdata in member_data.items():
+            if userdata.get('username') == username:
+                user = {
+                    'id': userdata.get('id'),
+                    'username': userdata.get('username'),
+                    'email': userdata.get('email')
+                }
+
+                # Fetch followed news outlets for the member
+                followed_news_outlets = []
+                followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(user['email']).get()
+
+                if followed_users_ref:
+                    for data in followed_users_ref.values():
+                        email = data.get('newsoutlet_id')
+                        if email:
+                            user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(email).get()
+                            if user_ref:
+                                followed_news_outlets.append(list(user_ref.values())[0].get('username'))
+
+                return render_template(
+                    'member_profile.html',
+                    user_info=user['username'],
+                    followed_news_outlets=followed_news_outlets
+                )
+
+    # If no user or news outlet is found
     flash('لم نستطع إيجاد الحساب.', 'danger')
-    return redirect(url_for('home'))
+    return redirect(request.referrer)
+
 
 def determine_user_role(email):
     users_ref = db.reference('users')
@@ -548,7 +714,7 @@ def verify_request(request_id):
             email = request_data['email']
             subject = ""
             body = ""
-            password_hash = generate_password_hash(request_data['password'])
+            password_hash = generate_password_hash(request_data['password']) 
 
             if 'decline' in request.form:
                 ref_request.update({'status': 'declined', 'password': password_hash})
@@ -621,10 +787,10 @@ def submit_post():
 
     bucket = storage.bucket()
 
-    media_url = None
+    media_url = None 
     if media and media.filename:
         filename = secure_filename(media.filename)
-        blob = bucket.blob(f'posts/{username}/{filename}')
+        blob = bucket.blob(f'postss/{username}/{filename}')
         content_type = media.content_type
         if not content_type:
             extension = filename.split('.')[-1].lower()
@@ -645,20 +811,49 @@ def submit_post():
 
     timestamp = datetime.now()
     formatted_timestamp = timestamp.strftime("%b %d, %Y %I:%M%p")
-
+    formatted_comment = ""
     post_data = {
         'title': title,
         'body': body,
         'media_url': media_url,
         'author': username,
         'author_email': user_email,
-        'timestamp': formatted_timestamp
+        'timestamp': formatted_timestamp,
+        'comment': formatted_comment
     }
 
-    db.reference('posts').push(post_data)
+    post_ref= db.reference('postss').push(post_data)
+    post_id = post_ref.key
+    
+    notifications = list(user_ref.values())[0].get('notifications', [])
+    if notifications:
+        for notification in notifications:
+            member_email = notification.get('member_id')
+            if member_email:
+                member_email = member_email.lower()
+                notification_id = str(uuid.uuid4()) 
+
+                notification_data = {
+                    'member_id': member_email,
+                    'newsoutlet': username,
+                    'post_title': title,
+                    'post_content': body,
+                    'timestamp': formatted_timestamp,
+                    'notification_id': notification_id,
+                    'post_id': post_id 
+                }
+
+                # Push notification to Firebase
+                db.reference('notifications').push(notification_data)
+
+                print(f"أرسلنا الإشعار إلى: {member_email}")  
+            else:
+                print("Member email missing in notification")  
+    else:
+        print("لم تفعل الإشعارات لنشرات هذه المنصة الإخبارية")  
 
     flash('<i class="fas fa-check-circle me-3"></i> تم إضافة النشرة بنجاح', 'success')
-    return redirect(url_for('home'))
+    return redirect(request.referrer)
 
 @app.route('/delete_post/<string:post_id>', methods=['POST'])
 @login_required
@@ -668,11 +863,11 @@ def delete_post(post_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    post_ref = db.reference(f'posts/{post_id}')
+    post_ref = db.reference(f'postss/{post_id}')
     post_ref.delete()
 
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
-    return redirect(url_for('home'))
+    return redirect(request.referrer)
 
 @app.route('/admin/logout')
 @app.route('/logout')
@@ -752,7 +947,7 @@ def follow_newsoutlet(username):
         
         is_already_following = any(follow.get('member_id') == member_id for follow in current_followers)
         if is_already_following:
-            return jsonify({'success': False, 'message': 'You are already following this news outlet.'})
+            return jsonify({'success': False, 'message': 'لقد قمت بمتابعة هذه المنصة الإعلامية مسبقًا'})
         else:
             follow_data = {
                 'member_id': member_id,
@@ -767,7 +962,7 @@ def follow_newsoutlet(username):
             return jsonify({'success': True, 'follower_count': len(current_followers)})
 
     else:
-        return jsonify({'success': False, 'message': 'News Outlet not found'})
+        return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
 
 @app.route('/unfollow/<username>', methods=['POST'])
 @login_required
@@ -792,11 +987,123 @@ def unfollow_newsoutlet(username):
         for key, entry in follow_entries.items():
             if entry.get('newsoutlet_id') == useremail:
                 firebase_database.child('follows').child(key).delete()
-        
+
+        unnotify_newsoutlet(username)
+
         return jsonify({'success': True, 'follower_count': len(current_followers)})
 
     else:
-        return jsonify({'success': False, 'message': 'News Outlet not found'})
+        return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
+ 
+@app.route('/notify/<username>', methods=['POST'])
+@login_required
+def notify_newsoutlet(username):
+    useremail = request.form.get('useremail')
+    newsoutlet_data = firebase_database.child('newsoutlet').order_by_child('email').equal_to(useremail).get()
+
+    if newsoutlet_data:
+        newsoutlet_key, newsoutlet_info = list(newsoutlet_data.items())[0]
+        member_id = session['user_email']
+        current_notifications = newsoutlet_info.get('notifications', [])
+
+        if isinstance(current_notifications, dict):
+            current_notifications = [current_notifications]
+
+        if isinstance(current_notifications, list):
+            converted_notifications = []
+            for notification in current_notifications:
+                if isinstance(notification, str):
+                    converted_notifications.append({'member_id': notification})
+                elif isinstance(notification, dict):
+                    converted_notifications.append(notification)
+                else:
+                    print(f"حصل خطأ في طريقة كتابة الإشعار: {notification}")
+
+            current_notifications = converted_notifications
+
+        is_already_notified = any(notification.get('member_id') == member_id for notification in current_notifications)
+
+        if is_already_notified:
+            return jsonify({'success': False, 'message': 'أنت مسجل بالفعل في إشعارات هذه المنصة الإعلامية'})
+        else:
+            current_notifications.append({'member_id': member_id})
+            firebase_database.child('newsoutlet').child(newsoutlet_key).update({'notifications': current_notifications})
+            return jsonify({'success': True, 'message': 'تم تفعيل الإشعارات', 'notification_count': len(current_notifications)})
+    else:
+        return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
+
+@app.route('/unnotify/<username>', methods=['POST'])
+@login_required
+def unnotify_newsoutlet(username):
+    useremail = request.form.get('useremail')
+    newsoutlet_data = firebase_database.child('newsoutlet').order_by_child('email').equal_to(useremail).get()
+
+    if newsoutlet_data:
+        newsoutlet_key, newsoutlet_info = list(newsoutlet_data.items())[0]
+        member_id = session['user_email']
+        current_notifications = newsoutlet_info.get('notifications', [])
+
+        if isinstance(current_notifications, int):
+            current_notifications = [{'member_id': 'placeholder'} for _ in range(current_notifications)]
+
+        current_notifications = [notification for notification in current_notifications if notification.get('member_id') != member_id]
+        firebase_database.child('newsoutlet').child(newsoutlet_key).update({'notifications': current_notifications})
+
+        notification_entries = firebase_database.child('notifications').order_by_child('member_id').equal_to(member_id).get()
+        for key, entry in notification_entries.items():
+            if entry.get('newsoutlet_id') == useremail:
+                firebase_database.child('notifications').child(key).delete()
+        return jsonify({'success': True, 'message': 'تم إلغاء الاشعارات', 'notification_count': len(current_notifications)})
+    else:
+        return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
+
+def fetch_notifications(user_email):
+    notifications_ref = db.reference('notifications').order_by_child('member_id').equal_to(user_email.lower()).get()
+    all_notifications = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
+
+    notifications = []
+    user_email = session['user_email']
+    if notifications_ref:
+        for notification_key, notification_data in all_notifications.items():
+            post_exists = db.reference('postss').child(notification_data.get('post_id')).get() is not None
+            # show notifications only if they're unread and the posts still exist
+            if post_exists and not notification_data.get('is_read', False): 
+                 notifications.append({
+                 'notification_key': notification_key,
+                 'post_title': notification_data.get('post_title'),
+                 'newsoutlet': notification_data.get('newsoutlet'),
+                 'timestamp': notification_data.get('timestamp'),
+                 'is_read': notification_data.get('is_read'),
+                 'post_id': notification_data.get('post_id')
+         })
+    notifications.reverse()
+    return notifications
+
+
+@app.route('/notification/read/<notification_key>', methods=['POST'])
+@login_required
+def mark_notification_as_read(notification_key):
+    user_email = session['user_email']
+    notification_ref = firebase_database.child('notifications').child(notification_key).get()
+    
+    if notification_ref and notification_ref.get('member_id') == user_email:
+        # Mark the notification as read
+        firebase_database.child('notifications').child(notification_key).update({'is_read': True})
+        return jsonify({'success': True, 'message': 'تم تسجيل الإشعار كمقروء'})
+    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+
+@app.route('/notification/delete/<notification_key>', methods=['POST'])
+@login_required
+def delete_notification(notification_key):
+    user_email = session['user_email']
+    
+    notification_ref = firebase_database.child('notifications').child(notification_key).get()
+    
+    if notification_ref and notification_ref.get('member_id') == user_email:
+        firebase_database.child('notifications').child(notification_key).delete()
+        return jsonify({'success': True, 'message': 'تم حذف الإشعار بنجاح'})
+    
+    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
 
 
 
@@ -809,3 +1116,131 @@ def post(post_id):
         abort(404)  
 
     return render_template('post.html', post=post)
+
+@app.context_processor
+def inject_notifications():
+    if 'user_email' in session:  
+        notifications = fetch_notifications(session['user_email']) 
+    else:
+        notifications = [] 
+    return {'notifications': notifications} 
+
+@app.route('/post/<string:post_id>/add_comment', methods=['POST'])
+@login_required
+def add_comment(post_id):
+    user_email = current_user.get_id()
+
+    if not user_email:
+        flash('الوصول غير مصرح به', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        flash('لم يتم العثور على المستخدم', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    username = list(user_ref.values())[0].get('username')
+    comment_body = request.form['comment']
+
+    comment_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%b %d, %Y %I:%M%p")
+    formatted_replies = ""
+    comment_data = {
+        'comment_id': comment_id,
+        'author': username,
+        'author_email': user_email,
+        'body': comment_body,
+        'timestamp': timestamp,
+        'replies': formatted_replies
+    }
+
+    db.reference(f'postss/{post_id}/comment').child(comment_id).set(comment_data)
+
+    flash('تمت إضافة التعليق بنجاح', 'success')
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/reply/<string:comment_id>', methods=['POST'])
+@login_required
+def reply_comment(post_id, comment_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('الوصول غير مصرح به', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+    if not user_ref:
+        user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
+    if not user_ref:
+        flash('لم يتم العثور على المستخدم', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    username = list(user_ref.values())[0].get('username')
+    reply_body = request.form['reply']
+
+    reply_id = str(uuid.uuid4())
+    timestamp = datetime.now().strftime("%b %d, %Y %I:%M%p")
+
+    reply_data = {
+        'reply_id': reply_id,
+        'author': username,
+        'author_email': user_email,
+        'body': reply_body,
+        'timestamp': timestamp
+    }
+
+    db.reference(f'postss/{post_id}/comment/{comment_id}/replies').child(reply_id).set(reply_data)
+
+    flash('تمت إضافة الرد بنجاح', 'success')
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/comment/<string:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(post_id, comment_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    comment_ref = db.reference(f'postss/{post_id}/comment/{comment_id}').get()
+    if not comment_ref:
+        flash('<i class="fas fa-times-circle me-3"></i> التعليق غير موجود', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    if comment_ref['author_email'] != user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا التعليق', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    db.reference(f'postss/{post_id}/comment/{comment_id}').delete()
+    flash('<i class="fas fa-check-circle me-3"></i> تم حذف التعليق بنجاح', 'success')
+
+    return redirect(url_for('post', post_id=post_id))
+
+@app.route('/post/<string:post_id>/reply/<string:comment_id>/delete/<string:reply_id>', methods=['POST'])
+@login_required
+def delete_reply(post_id, comment_id, reply_id):
+    user_email = current_user.get_id()
+    
+    if not user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
+        return redirect(url_for('newsoutlet_login'))
+
+    reply_ref = db.reference(f'postss/{post_id}/comment/{comment_id}/replies/{reply_id}')
+    reply_data = reply_ref.get()
+
+    if not reply_data:
+        flash('<i class="fas fa-times-circle me-3"></i> الرد غير موجود', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    if reply_data['author_email'] != user_email:
+        flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا الرد', 'danger')
+        return redirect(url_for('post', post_id=post_id))
+
+    reply_ref.delete()
+    flash('<i class="fas fa-check-circle me-3"></i> تم حذف الرد بنجاح', 'success')
+
+    return redirect(url_for('post', post_id=post_id))

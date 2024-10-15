@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <div class="card mb-4">
         <div class="card-header">
-            <h4>معلومات العضو</h4>
+            <h4>معلومات حسابي</h4>
         </div>
         <div class="card-body">
             <h5 class="card-title">اسم العضو: {{ user_info }}</h5>
@@ -19,12 +19,12 @@
                     </h5>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         {% for outlet in followed_news_outlets %}
-                            <a class="dropdown-item custom-color" 
-                               href="{{ url_for('user_profile', username=outlet) }}">{{ outlet }}</a>
+                            <a class="dropdown-item custom-color" href="{{ url_for('user_profile', username=outlet) }}">{{ outlet }}</a>
                         {% endfor %}
                     </div>
                 </div>
             {% endif %}
+
         </div>
     </div>
 </div>

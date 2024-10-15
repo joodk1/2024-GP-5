@@ -1,8 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
-    <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
-        إضافة نشرة جديدة
-    </button>
+    <div class="text-right">
+        <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
+            إضافة نشرة جديدة
+        </button>
+    </div>    
 
     <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -40,32 +42,34 @@
     {% for post in posts %}
     <article class="media content-section">
         <div class="media-body">
-            <div class="article-metadata">
-                <a class="mr-2" href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a>
+            <div class="article-metadata text-right">
+                {% if post.author %}
+                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                {% endif %}
                 <small class="text-muted">{{ post.timestamp }}</small>
             </div> 
             <br>
-            <h3><a class="article-title" href="#">{{ post.title }}</a></h3>
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+            <h3 class="article-title">{{ post.title }}</h3>
             <p class="article-content">{{ post.content }}
                 {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
                     {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
                         <video class="post-video" controls>
-                            {% if file_ext == 'mp4' %}
-                                <source src="{{ post.media }}" type="video/mp4">
-                            {% elif file_ext == 'webm' %}
-                                <source src="{{ post.media }}" type="video/webm">
-                            {% elif file_ext == 'ogg' %}
-                                <source src="{{ post.media }}" type="video/ogg">
-                            {% elif file_ext == 'mov' %}
-                                <source src="{{ post.media }}" type="video/quicktime">
-                            {% endif %}
+                            <source src="{{ post.media }}" type="video/{{ file_ext }}">
                         </video>
                     {% else %}
                         <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
             </p>
+
+        </p>
+        <div class="post-comments">
+            <i class="far fa-comment"></i>
+            <span>{{ post.count }}</span>
+        </div>
+            </a>
             {% if post.author_email == user_id %}
                 <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
                     <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
