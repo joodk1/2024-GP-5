@@ -371,7 +371,7 @@ a.article-title:hover {
   }
 
   .reply-form {
-      margin-top: 10px; /* Space between reply button and reply form */
+      margin-top: 10px; 
   }
   .delete-button {
   background-color:#4F792A;
@@ -385,3 +385,35 @@ a.article-title:hover {
   .delete-button:hover {
   background-color: #3f5e22;
   }
+  
+.like-button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: black;  
+}
+
+.like-button:hover {
+  background-color: transparent; 
+}
+  
+
+.fas {
+color: red ; 
+}
+.like-button span {
+  margin-left: 6px; 
+}
+.post-comments {
+  display: flex;
+  align-items: center; 
+  gap: 5px; 
+}
+.post-comments span {
+  margin-right: 10px; 
+}
+

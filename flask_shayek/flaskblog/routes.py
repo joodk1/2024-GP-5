@@ -29,7 +29,6 @@ firebase_admin.initialize_app(cred, {
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 firebase_database = db.reference()
-# Initializing the face detector
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
@@ -41,8 +40,9 @@ def parse_timestamp(timestamp):
     except (ValueError, TypeError):
         return datetime(1970, 1, 1)
     
+    
 def fetch_posts():
-    posts_ref = db.reference('postss').order_by_child('timestamp')
+    posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
     reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
     posts = []
@@ -79,14 +79,15 @@ def fetch_posts():
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
             'comments': formatted_comments,
-            'count': count
-        })
+            'count': count,
+            'likes': post_data.get('likes', 0),  
+            'liked_by': post_data.get('liked_by', []) })
     return posts
 
 posts = fetch_posts()
 
 def fetch_posts_by_user(user_email):
-    posts_ref = db.reference('postss').order_by_child('author_email').equal_to(user_email)
+    posts_ref = db.reference('posts').order_by_child('author_email').equal_to(user_email)
     posts_snapshot = posts_ref.get()
     if not posts_snapshot:
         return []
@@ -107,8 +108,9 @@ def fetch_posts_by_user(user_email):
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
-            'count': count
-        })
+            'count': count,
+            'likes': post_data.get('likes', 0),  
+            'liked_by': post_data.get('liked_by', []) })
     return posts
 
 def encode_email(email):
@@ -216,6 +218,7 @@ def home():
         if user_data:
             login_user(user_data)
             newsoutlet_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
+
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
@@ -462,7 +465,6 @@ def user_profile(username):
 
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
-
 
     if newsoutlet_data:
         for uid, userdata in newsoutlet_data.items():
@@ -790,7 +792,7 @@ def submit_post():
     media_url = None 
     if media and media.filename:
         filename = secure_filename(media.filename)
-        blob = bucket.blob(f'postss/{username}/{filename}')
+        blob = bucket.blob(f'posts/{username}/{filename}')
         content_type = media.content_type
         if not content_type:
             extension = filename.split('.')[-1].lower()
@@ -819,10 +821,13 @@ def submit_post():
         'author': username,
         'author_email': user_email,
         'timestamp': formatted_timestamp,
-        'comment': formatted_comment
-    }
+        'comment': formatted_comment,
+        'likes': 0,  
+        'liked_by': []  
+      }
+    
 
-    post_ref= db.reference('postss').push(post_data)
+    post_ref= db.reference('posts').push(post_data)
     post_id = post_ref.key
     
     notifications = list(user_ref.values())[0].get('notifications', [])
@@ -863,7 +868,7 @@ def delete_post(post_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    post_ref = db.reference(f'postss/{post_id}')
+    post_ref = db.reference(f'posts/{post_id}')
     post_ref.delete()
 
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
@@ -1065,7 +1070,7 @@ def fetch_notifications(user_email):
     user_email = session['user_email']
     if notifications_ref:
         for notification_key, notification_data in all_notifications.items():
-            post_exists = db.reference('postss').child(notification_data.get('post_id')).get() is not None
+            post_exists = db.reference('posts').child(notification_data.get('post_id')).get() is not None
             # show notifications only if they're unread and the posts still exist
             if post_exists and not notification_data.get('is_read', False): 
                  notifications.append({
@@ -1158,7 +1163,7 @@ def add_comment(post_id):
         'replies': formatted_replies
     }
 
-    db.reference(f'postss/{post_id}/comment').child(comment_id).set(comment_data)
+    db.reference(f'posts/{post_id}/comment').child(comment_id).set(comment_data)
 
     flash('تمت إضافة التعليق بنجاح', 'success')
     return redirect(url_for('post', post_id=post_id))
@@ -1193,7 +1198,7 @@ def reply_comment(post_id, comment_id):
         'timestamp': timestamp
     }
 
-    db.reference(f'postss/{post_id}/comment/{comment_id}/replies').child(reply_id).set(reply_data)
+    db.reference(f'posts/{post_id}/comment/{comment_id}/replies').child(reply_id).set(reply_data)
 
     flash('تمت إضافة الرد بنجاح', 'success')
     return redirect(url_for('post', post_id=post_id))
@@ -1206,7 +1211,7 @@ def delete_comment(post_id, comment_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    comment_ref = db.reference(f'postss/{post_id}/comment/{comment_id}').get()
+    comment_ref = db.reference(f'posts/{post_id}/comment/{comment_id}').get()
     if not comment_ref:
         flash('<i class="fas fa-times-circle me-3"></i> التعليق غير موجود', 'danger')
         return redirect(url_for('post', post_id=post_id))
@@ -1215,7 +1220,7 @@ def delete_comment(post_id, comment_id):
         flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا التعليق', 'danger')
         return redirect(url_for('post', post_id=post_id))
 
-    db.reference(f'postss/{post_id}/comment/{comment_id}').delete()
+    db.reference(f'posts/{post_id}/comment/{comment_id}').delete()
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف التعليق بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
@@ -1229,7 +1234,7 @@ def delete_reply(post_id, comment_id, reply_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    reply_ref = db.reference(f'postss/{post_id}/comment/{comment_id}/replies/{reply_id}')
+    reply_ref = db.reference(f'posts/{post_id}/comment/{comment_id}/replies/{reply_id}')
     reply_data = reply_ref.get()
 
     if not reply_data:
@@ -1244,3 +1249,59 @@ def delete_reply(post_id, comment_id, reply_id):
     flash('<i class="fas fa-check-circle me-3"></i> تم حذف الرد بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
+
+@app.route('/like_post/<post_id>', methods=['POST'])
+@login_required
+def like_post(post_id):
+    user_email = current_user.get_id()
+    if not user_email:
+        return jsonify({'success': False, 'message': 'User not authenticated'}), 403
+
+    post_ref = db.reference(f'posts/{post_id}')
+    post_data = post_ref.get()
+    if not post_data:
+        return jsonify({'success': False, 'message': 'Post not found'}), 404
+
+    likes = post_data.get('likes', 0)
+    liked_by = post_data.get('liked_by', [])
+
+    if user_email in liked_by:
+        liked_by.remove(user_email)
+        likes -= 1
+    else:
+        liked_by.append(user_email)
+        likes += 1
+    post_ref.update({
+        'likes': likes,
+        'liked_by': liked_by
+    })
+
+    return jsonify({'success': True, 'likes': likes})
+
+@app.route('/unlike_post/<post_id>', methods=['POST'])
+@login_required
+def unlike_post(post_id):
+    user_email = current_user.get_id()  
+
+    if not user_email:
+        return jsonify({'success': False, 'message': 'User not authenticated'}), 403
+
+    post_ref = db.reference(f'posts/{post_id}')
+    post_data = post_ref.get()
+
+    if not post_data:
+        return jsonify({'success': False, 'message': 'Post not found'}), 404
+
+    
+    liked_by = post_data.get('liked_by', [])
+
+    if user_email not in liked_by:
+        return jsonify({'success': False, 'message': 'You have not liked this post.'}), 400
+
+    liked_by.remove(user_email)
+    likes = max(post_data.get('likes', 0) - 1, 0)  
+    post_ref.update({
+        'likes': likes,
+        'liked_by': liked_by
+    })
+    return jsonify({'success': True, 'likes': likes})

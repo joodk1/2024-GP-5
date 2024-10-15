@@ -14,7 +14,7 @@
                 </div> 
                 <br>
                 <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
-                <h3 class="article-title">{{ post.title }}</h3>
+                    <h3 class="article-title">{{ post.title }}</h3>
                 <p class="article-content">{{ post.content }}
                     {% if post.media %}
                     {% set file_ext = post.media.split('.')[-1].lower() %}
@@ -35,13 +35,28 @@
                     {% endif %}
                 {% endif %}
             </p>
+        </a>
+
             <div class="post-comments">
                 <i class="far fa-comment"></i>
-                <span>{{ post.count }}</span>
+                <span>{{ post.count }}</span><button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >
+                    <i class="far fa-heart 
+                        {% if current_user.get_id() in post.liked_by %} 
+                            fas liked-heart 
+                        {% endif %}"></i> 
+                    <span>{{ post.likes }}</span>
+                </button>
             </div>
            
             </div>
-        </a>
+        
         </article>
+        
+        <script>
+            function toggleLike(button) {
+                alert('يرجى تسجيل الدخول أولاً!');
+                return; 
+            }
+        </script>
     {% endfor %}
 {% endblock %}
