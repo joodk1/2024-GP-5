@@ -9,21 +9,21 @@
         <div class="card-body">
             <h5 class="card-title">اسم المنصة: {{ user_info }}</h5>
             <br>
-                <div class="dropdown float-right">
-                    <h5 class="card-title d-flex align-items-center dropdown-toggle"
-                        id="followersDropdown" data-toggle="dropdown" aria-haspopup="true"
-                        aria-expanded="false" style="cursor: pointer; margin: 0;">
-                        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
-                        قائمة المتابعين: {{ followers|length }}
-                    </h5>
-                    <div class="dropdown-menu" aria-labelledby="followersDropdown">
-                        {% for follower in followers %}
-                            <a class="dropdown-item custom-color" 
-                               href="{{ url_for('user_profile', username=follower) }}">{{ follower }}</a>
-                        {% endfor %}
-                    </div>
+            <div class="dropdown float-right">
+                <h5 class="card-title d-flex align-items-center dropdown-toggle"
+                    id="followersDropdown" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false" style="cursor: pointer; margin: 0;">
+                    <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
+                    <span id="follower-count">{{ followers|length }}</span> : قائمة المتابعين
+                </h5>
+                <div class="dropdown-menu" aria-labelledby="followersDropdown" id="followersDropdownMenu">
+                    {% for follower in followers %}
+                        <a class="dropdown-item custom-color" 
+                           href="{{ url_for('user_profile', username=follower) }}">{{ follower }}</a>
+                    {% endfor %}
                 </div>
-                <br><br>
+            </div>            
+            <br><br>
             {% if followed_news_outlets %}
                 <div class="dropdown float-right">
                     <h5 class="card-title d-flex align-items-center dropdown-toggle" 
@@ -43,16 +43,14 @@
         </div>
 
         {% if user_info == current_user.username %}
-            <!-- Profile owner sees the delete post option -->
             <script>
                 function confirmDelete() {
                     return confirm('متأكد من حذف النشرة؟');
                 }
             </script>
         {% else %}
-            {% if session['logged_in'] == True %}
+            {% if current_user.is_authenticated %}
             <div class="text-right">
-                <!-- Visitor sees the follow/unfollow option -->
                 <div id="follow-buttons">
                     {% if is_following %}
                         <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
@@ -67,171 +65,190 @@
                     {% if is_following %}
                         <!-- Show bell notification buttons only if the user is following the news outlet -->
                         {% if is_getting_notifications %}
-                            <button id="unnotify-btn" class="btn btn-danger">🔕 إيقاف الإشعارات</button>
-                            <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 تفعيل الإشعارات</button>
+                            <button id="unnotify-btn" class="btn btn-danger">🔕 إلغاء الإشعارات</button>
+                            <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
                         {% else %}
-                            <button id="notify-btn" class="btn btn-secondary">🔔 تفعيل الإشعارات</button>
-                            <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إيقاف الإشعارات</button>
+                            <button id="notify-btn" class="btn btn-secondary">🔔 متابعة الإشعارات</button>
+                            <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
                         {% endif %}
                     {% else %}
                         <!-- Hide notification buttons if not following -->
-                        <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 تفعيل الإشعارات</button>
-                        <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إيقاف الإشعارات</button>
+                        <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
+                        <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
                     {% endif %}
-                </div>
-            </div>                            
+                </div>                            
             {% endif %}
         {% endif %}
     </div>
 
-        <div class="card-header">
-            <h4>المنشورات</h4>
-        </div>
-        {% for post in posts %}
-            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
-                <div class="media-body">
-                    <div class="article-metadata text-right">
-                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                        <small class="text-muted">{{ post.timestamp }}</small>
-                    </div> 
-                    <br>
-                    <h3 class="article-title">{{ post.title }}</h3>
-                    <p class="article-content">{{ post.content }}</p>
-                        {% if post.media %}
-                            {% set file_ext = post.media.split('.')[-1].lower() %}
-                            {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                                <video class="post-video" controls>
-                                    <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                                </video>
-                            {% else %}
-                                <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                            {% endif %}
-                        {% endif %}
-
-                    <!-- Only show delete button if the logged-in user is the post author -->
-                    {% if user_info == current_user.username %}
-                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                            <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                        </form>
+    <div class="card-header">
+        <h4>المنشورات</h4>
+    </div>
+    {% for post in posts %}
+        <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+            <div class="media-body">
+                <div class="article-metadata text-right">
+                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                    <small class="text-muted">{{ post.timestamp }}</small>
+                </div> 
+                <br>
+                <h3 class="article-title">{{ post.title }}</h3>
+                <p class="article-content">{{ post.content }}</p>
+                {% if post.media %}
+                    {% set file_ext = post.media.split('.')[-1].lower() %}
+                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                        <video class="post-video" controls>
+                            <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                        </video>
+                    {% else %}
+                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
-                </p>
+                {% endif %}
+
+                {% if user_info == current_user.username %}
+                    <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
+                        {{ form.hidden_tag() }} <!-- CSRF token -->
+                        <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
+                    </form>
+                {% endif %}
                 <div class="post-comments">
                     <i class="far fa-comment"></i>
                     <span>{{ post.count }}</span>
                 </div>
-                </div>
-            </article>
-        {% endfor %}
-    </div>
+            </div>
+        </article>
+    {% endfor %}
+</div>
 
-    <script>
-        $(document).ready(function() {
-            // Follow News Outlet
-            $('#follow-btn').click(function(e) {
-                e.preventDefault(); 
-    
-                $.ajax({
-                    url: '{{ url_for("follow_newsoutlet", username=user_info) }}',
-                    type: 'POST',
-                    data: {
-                        useremail: '{{ useremail }}'
-                    },
-                    success: function(response) {
-                        console.log(response);
-                        if (response.success) {
-                            $('#follower-count').text(response.follower_count); // Update follower count
-                            $('#follow-btn').hide();
-                            $('#unfollow-btn').show(); // Show unfollow button
-                            $('#notify-btn').show(); // Show notification bell when following
-                        } else {
-                            alert(response.message); // Show error message
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
-                    }
-                });
-            });
-    
-            // Unfollow News Outlet
-            $('#unfollow-btn').click(function(e) {
-                e.preventDefault(); 
-    
-                $.ajax({
-                    url: '{{ url_for("unfollow_newsoutlet", username=user_info) }}',
-                    type: 'POST',
-                    data: {
-                        useremail: '{{ useremail }}'
-                    },
-                    success: function(response) {
-                        console.log(response);
-                        if (response.success) {
-                            $('#follower-count').text(response.follower_count); // Update follower count
-                            $('#unfollow-btn').hide();
-                            $('#follow-btn').show(); // Show follow button
-                            $('#notify-btn').hide(); // Hide notification bell when unfollowing
-                            $('#unnotify-btn').hide(); // Hide unnotify button as well
-                        } else {
-                            alert(response.message); // Show error message
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
-                    }
-                });
-            });
-    
-        // Enable Notifications
-        $('#notify-btn').click(function(e) {
-                e.preventDefault();
+<script>
+    $(document).ready(function() {
+        // Follow News Outlet
+        $('#follow-btn').click(function(e) {
+            e.preventDefault(); 
 
-                $.ajax({
-                    url: '{{ url_for("notify_newsoutlet", username=user_info) }}',
-                    type: 'POST',
-                    data: {
-                        useremail: '{{ useremail }}'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#notify-btn').hide();
-                            $('#unnotify-btn').show(); // Show unnotify button
-                            alert(response.message); // Show success message
-                        } else {
-                            alert(response.message); // Show error message
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
+            $.ajax({
+                url: '{{ url_for("follow_newsoutlet", username=user_info) }}',
+                type: 'POST',
+                data: {
+                    useremail: '{{ useremail }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#follower-count').text(response.follower_count); // Update follower count
+                        $('#follow-btn').hide(); // Hide follow button
+                        $('#unfollow-btn').show(); // Show unfollow button
+                        $('#notify-btn').show(); // Show notification bell when following
+                        updateFollowersDropdown(response.followers); // Update dropdown
+                    } else {
+                        alert(response.message); 
                     }
-                });
-            });
-
-            // Disable Notifications
-            $('#unnotify-btn').click(function(e) {
-                e.preventDefault();
-
-                $.ajax({
-                    url: '{{ url_for("unnotify_newsoutlet", username=user_info) }}',
-                    type: 'POST',
-                    data: {
-                        useremail: '{{ useremail }}'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#unnotify-btn').hide();
-                            $('#notify-btn').show(); // Show notify button
-                            alert(response.message); // Show success message
-                        } else {
-                            alert(response.message); // Show error message
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error:', status, error);
-                    }
-                });
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                    alert('حدث خطأ أثناء متابعة المنصة، يرجى المحاولة مرة أخرى.');
+                }
             });
         });
-    </script>
-    
-</div>
+
+       // Unfollow News Outlet
+        $('#unfollow-btn').click(function(e) {
+            e.preventDefault(); 
+
+            $.ajax({
+                url: '{{ url_for("unfollow_newsoutlet", username=user_info) }}',
+                type: 'POST',
+                data: {
+                    useremail: '{{ useremail }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#follower-count').text(response.follower_count); // Update follower count
+                        $('#follow-btn').show(); 
+                        $('#unfollow-btn').hide(); 
+                        $('#notify-btn').hide(); 
+                        $('#unnotify-btn').hide(); 
+                        updateFollowersDropdown(response.followers); // Update dropdown with all followers
+                    } else {
+                        alert(response.message); // Show error message if unfollow fails
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                    alert('حدث خطأ أثناء إلغاء متابعة المنصة، يرجى المحاولة مرة أخرى.');
+                }
+            });
+        });
+
+
+        // Update followers dropdown
+        function updateFollowersDropdown(followers) {
+            const dropdownMenu = $('#followersDropdownMenu');
+            dropdownMenu.empty(); // Clear current dropdown items
+
+            if (followers.length === 0) {
+                dropdownMenu.append('<a class="dropdown-item">لا متابعين</a>');
+            } else {
+                followers.forEach(function(follower) {
+                    dropdownMenu.append(
+                        `<a class="dropdown-item custom-color" href="{{ url_for('user_profile', username='') }}${follower}">${follower}</a>`
+                    );
+                });
+            }
+        }
+
+        // Enable Notifications
+        $('#notify-btn').click(function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: '{{ url_for("notify_newsoutlet", username=user_info) }}',
+                type: 'POST',
+                data: {
+                    useremail: '{{ useremail }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#notify-btn').hide(); 
+                        $('#unnotify-btn').show(); 
+                        alert(response.message); 
+                    } else {
+                        alert(response.message); 
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                }
+            });
+        });
+
+        // Disable Notifications
+        $('#unnotify-btn').click(function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: '{{ url_for("unnotify_newsoutlet", username=user_info) }}',
+                type: 'POST',
+                data: {
+                    useremail: '{{ useremail }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#unnotify-btn').hide(); 
+                        $('#notify-btn').show(); 
+                        alert(response.message); 
+                    } else {
+                        alert(response.message); 
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                }
+            });
+        });
+
+    });
+</script>
+
+
+
 {% endblock %}
