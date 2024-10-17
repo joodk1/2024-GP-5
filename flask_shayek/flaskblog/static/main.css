@@ -401,19 +401,20 @@ a.article-title:hover {
   background-color: transparent; 
 }
   
-
 .fas {
 color: red ; 
 }
+
 .like-button span {
   margin-left: 6px; 
 }
+
 .post-comments {
   display: flex;
   align-items: center; 
   gap: 5px; 
 }
+
 .post-comments span {
   margin-right: 10px; 
 }
-

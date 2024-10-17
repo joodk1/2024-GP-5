@@ -23,7 +23,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -32,7 +32,7 @@ firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = '/Users/lamiafa/Downloads/Downloads/ResNet50_Model_Web.h5'
+model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
 model = load_model(model_path)
 def parse_timestamp(timestamp):
     try:
@@ -295,7 +295,7 @@ def member_login():
                     session['user_type'] = 'member'
                     session['username'] = user_data.get('username')
 
-                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل دخولك بنجاح', 'success')
                     return redirect(url_for('home'))
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
@@ -347,7 +347,7 @@ def newsoutlet_login():
                     session['user_type'] = 'newsoutlet'
                     session['username'] = user_data.get('username')
 
-                    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك بنجاح', 'success')
+                    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل دخولك بنجاح', 'success')
                     return redirect(url_for('home'))
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> الحساب غير موجود.', 'danger')
@@ -598,7 +598,7 @@ def member_register():
             
             db.reference(f'users/{user.uid}').set(user_data)
             
-            flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل الحساب بنجاح', 'success')
+            flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل الحساب بنجاح', 'success')
             return redirect(url_for('member_login'))
         except Exception as e:
             flash(f'<i class="fas fa-times-circle me-3"></i> حدث خطأ: {str(e)}', 'danger')
@@ -627,7 +627,7 @@ def register_request():
 
         db.reference('registration_requests').push(registration_data)
 
-        flash('<i class="fas fa-check-circle me-3"></i> تم رفع طلبكم بنجاح، سيتم مراجعة طلبكم والتأكد من الوثائق المرفقة، الرجاء مراجعة بريدكم الوارد أو البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
+        flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم رفع طلبكم بنجاح، سيتم مراجعة طلبكم والتأكد من الوثائق المرفقة، الرجاء مراجعة بريدكم الوارد أو البريد غير الهام خلال الأيام القادمة لمعرفة حالة الطلب', 'success')
         return redirect(url_for('homepage'))
     else:
         return render_template('register_request.html', title='طلب تسجيل حساب', form=form)
@@ -722,7 +722,7 @@ def verify_request(request_id):
                 ref_request.update({'status': 'accepted', 'uid': new_user.uid, 'password': password_hash})                    
                 subject = "تم قبول طلب تسجيلكم في منصة شيّــك"
                 body = "عزيزنا/عزيزتنا {},\n\nتم قبول طلب تسجيلكم في منصة شيّــك".format(request_data['username'])
-                flash('<i class="fas fa-check-circle me-3"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
+                flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم قبول طلب التسجيل وإنشاء الحساب', 'success')
             msg = Message(subject, recipients=[email], body=body)
             mail.send(msg)
             return f"<script>window.location.href = '{url_for('admin_dashboard')}';</script>"
@@ -838,7 +838,7 @@ def submit_post():
     else:
         print("لم تفعل الإشعارات لنشرات هذه المنصة الإخبارية")  
 
-    flash('<i class="fas fa-check-circle me-3"></i> تم إضافة النشرة بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم إضافة النشرة بنجاح', 'success')
     return redirect(request.referrer)
 
 @app.route('/delete_post/<string:post_id>', methods=['POST'])
@@ -852,7 +852,7 @@ def delete_post(post_id):
     post_ref = db.reference(f'posts/{post_id}')
     post_ref.delete()
 
-    flash('<i class="fas fa-check-circle me-3"></i> تم حذف النشرة بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة بنجاح', 'success')
     return redirect(request.referrer)
 
 @app.route('/admin/logout')
@@ -860,7 +860,7 @@ def delete_post(post_id):
 def logout():
     session.clear()
     logout_user()
-    flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل خروجك بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل خروجك بنجاح', 'success')
     return redirect(url_for('homepage'))
     
 @app.route('/reset_password_request', methods=['GET', 'POST'])
@@ -887,7 +887,7 @@ def adminlogin():
             session['logged_in'] = True
             session['role'] = user_role 
             if user_role == 'admin':
-                flash('<i class="fas fa-check-circle me-3"></i> تم تسجيل دخولك كمسؤول', 'success')
+                flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل دخولك كمسؤول', 'success')
                 return redirect(url_for('admin_dashboard'))
             else:
                 flash('<i class="fas fa-times-circle me-3"></i> فشل تسجيل دخولك، راجع بريدك الإلكتروني وكلمة المرور', 'danger')
@@ -1262,7 +1262,7 @@ def delete_comment(post_id, comment_id):
         return redirect(url_for('post', post_id=post_id))
 
     db.reference(f'posts/{post_id}/comment/{comment_id}').delete()
-    flash('<i class="fas fa-check-circle me-3"></i> تم حذف التعليق بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف التعليق بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
 
@@ -1287,7 +1287,7 @@ def delete_reply(post_id, comment_id, reply_id):
         return redirect(url_for('post', post_id=post_id))
 
     reply_ref.delete()
-    flash('<i class="fas fa-check-circle me-3"></i> تم حذف الرد بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف الرد بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
 
