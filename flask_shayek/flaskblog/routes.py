@@ -17,7 +17,7 @@ from itsdangerous import URLSafeTimedSerializer
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model # type: ignore
+from tensorflow.keras.models import load_model 
 import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
@@ -34,6 +34,7 @@ detector = dlib.get_frontal_face_detector()
 # Loading the pre-trained model
 model_path = '/Users/lamiafa/Downloads/Downloads/ResNet50_Model_Web.h5'
 model = load_model(model_path)
+
 def parse_timestamp(timestamp):
     try:
         return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
@@ -204,8 +205,8 @@ def upload_video():
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
             os.remove(video_path)
             return jsonify({'result': pred_label})
-
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+
 
 @app.route('/home', methods=['GET'])
 @login_required
@@ -1102,40 +1103,68 @@ def unnotify_newsoutlet(username):
     else:
         return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
 
+
 def fetch_notifications(user_email):
     notifications_ref = db.reference('notifications').order_by_child('member_id').equal_to(user_email.lower()).get()
     all_notifications = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
 
     notifications = []
+    unread_count = 0  
     user_email = session['user_email']
+
     if notifications_ref:
         for notification_key, notification_data in all_notifications.items():
-            post_exists = db.reference('posts').child(notification_data.get('post_id')).get() is not None
-            # show notifications only if they're unread and the posts still exist
-            if post_exists and not notification_data.get('is_read', False): 
-                 notifications.append({
-                 'notification_key': notification_key,
-                 'post_title': notification_data.get('post_title'),
-                 'newsoutlet': notification_data.get('newsoutlet'),
-                 'timestamp': notification_data.get('timestamp'),
-                 'is_read': notification_data.get('is_read'),
-                 'post_id': notification_data.get('post_id')
-         })
+            post_id = notification_data.get('post_id')  
+            post_exists = db.reference('posts').child(post_id).get() is not None
+
+            if post_exists:
+                is_read = notification_data.get('is_read', False)
+                notifications.append({
+                    'notification_key': notification_key,  
+                    'post_title': notification_data.get('post_title'),
+                    'newsoutlet': notification_data.get('newsoutlet'),
+                    'timestamp': notification_data.get('timestamp'),
+                    'is_read': is_read,
+                    'post_id': post_id  
+                })
+                
+                if not is_read:
+                    unread_count += 1
+
     notifications.reverse()
-    return notifications
+    return notifications, unread_count
+
+@app.route('/fetch_notifications', methods=['GET'])
+def fetch_notifications_route():
+    user_email = session.get('user_email')
+    if user_email:
+        notifications, unread_count = fetch_notifications(user_email)
+        return jsonify({'success': True, 'notifications': notifications, 'unread_count': unread_count})
+    else:
+        return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'})
 
 
-@app.route('/notification/read/<notification_key>', methods=['POST'])
+
+@app.route('/notifications/mark_all_read', methods=['POST'])
 @login_required
-def mark_notification_as_read(notification_key):
-    user_email = session['user_email']
-    notification_ref = firebase_database.child('notifications').child(notification_key).get()
+def mark_all_notifications_as_read():
+    user_email = session.get('user_email')
+
+    if not user_email:
+        return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'}), 401
+
+    # Fetch notifications for the user
+    notifications_ref = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
+
+    if notifications_ref:
+        for notification_key, notification_data in notifications_ref.items():
+            if not notification_data.get('is_read', False):
+                # Mark the notification as read
+                firebase_database.child('notifications').child(notification_key).update({'is_read': True})
+
+        return jsonify({'success': True, 'message': 'تم تحديد جميع الإشعارات كمقروه'}), 200
     
-    if notification_ref and notification_ref.get('member_id') == user_email:
-        # Mark the notification as read
-        firebase_database.child('notifications').child(notification_key).update({'is_read': True})
-        return jsonify({'success': True, 'message': 'تم تسجيل الإشعار كمقروء'})
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+    return jsonify({'success': False, 'message': 'No notifications found'}), 404
 
 
 @app.route('/notification/delete/<notification_key>', methods=['POST'])
@@ -1149,7 +1178,7 @@ def delete_notification(notification_key):
         firebase_database.child('notifications').child(notification_key).delete()
         return jsonify({'success': True, 'message': 'تم حذف الإشعار بنجاح'})
     
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+    return jsonify({'success': False, 'message': 'لم يتم إيجاد الإشعار'})
 
 
 @app.route('/post/<string:post_id>')
@@ -1165,10 +1194,12 @@ def post(post_id):
 @app.context_processor
 def inject_notifications():
     if 'user_email' in session:  
-        notifications = fetch_notifications(session['user_email']) 
+        notifications, unread_count = fetch_notifications(session['user_email']) 
     else:
         notifications = [] 
-    return {'notifications': notifications} 
+        unread_count = 0  
+    return {'notifications': notifications, 'unread_count': unread_count}
+
 
 @app.route('/post/<string:post_id>/add_comment', methods=['POST'])
 @login_required

@@ -198,8 +198,8 @@ a.article-title:hover {
 
 .notification-count {
   position: absolute;
-  top: 12px;   
-  right: 14px;
+  top: 20px;   
+  right: 30px;
   transform: translate(50%, -50%);
   background-color: red;
   color: white; 
@@ -415,5 +415,35 @@ color: red ;
 }
 .post-comments span {
   margin-right: 10px; 
+}
+
+.unread-notification {
+  background-color: #ffffcc;
+}
+
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 15px;
+  font-size: 16px;
+  position: relative;
+}
+
+.notification-item .btn-danger {
+  align-self: flex-start; 
+  margin-top: 10px;
+}
+
+.list-group-item {
+  position: relative;
+}
+
+.custom-notification-menu {
+  max-height: 350px;
+  overflow-y: auto;
+  width: 300px;
+  transform: translateX(-130px);
 }
 
