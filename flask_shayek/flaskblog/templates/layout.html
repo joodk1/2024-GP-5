@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html lang="ar">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
-
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
     {% if title %}
     <title>شيّـــك - {{ title }}</title>
     {% else %}
     <title>شيّـــك</title>
     {% endif %}
-
+    
     <link rel="icon" type="image/png" href="/static/Images/Shayek_logo.png">
 </head>
 <body>
@@ -46,8 +47,8 @@
                     {% if session['logged_in'] == True %}
                         <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
                         <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
-                        
-                          <!-- Notifications-->
+
+                <!-- Notifications-->
                 <div class="nav-item dropdown" id="notificationsDropdown">
                     <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fa fa-bell"></i>
@@ -70,69 +71,70 @@
                                     </div>
                                 </li>                                                                                                                                                      
                                 {% endfor %}
-
+                            
                             </ul>
                         {% else %}
                             <p class="dropdown-item">لايوجد إشعارات</p>
                         {% endif %}
                     </div>
-                </div> 
+                </div>                
 
+                </div>
+                    {% else %}
+                        <a class="nav-item nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
+                    {% endif %}
+                    
+                    <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
+                </div>
             </div>
-            {% else %}
-                <a class="nav-item nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
-            {% endif %}
+        </nav>
+    </header>
 
-            <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
+    <main role="main" class="container">
+        <div class="row">
+            <div class="col-12">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message|safe }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}      
+                {% block content %}{% endblock %}
+            </div>
         </div>
-    </div>
-</nav>
-</header>
+    </main>
 
-<main role="main" class="container">
-    <div class="row">
-        <div class="col-12">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message|safe }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}      
-            {% block content %}{% endblock %}
+    <footer class="footer mt-auto py-3 bg-white">
+        <hr>
+        <div class="container text-center" style="direction: rtl;">
+            <span>تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
         </div>
-    </div>
-</main>
+    </footer>
 
-<footer class="footer mt-auto py-3 bg-white">
-    <hr>
-    <div class="container text-center" style="direction: rtl;">
-        <span>تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
-    </div>
-</footer>
-
-<script>
-    var firebaseConfig = {
-        apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
-        authDomain: "shayek-560ec.firebaseapp.com",
-        databaseURL: "https://shayek-560ec-default-rtdb.firebaseio.com",
-        projectId: "shayek-560ec",
-        storageBucket: "shayek-560ec.appspot.com",
-        messagingSenderId: "377837381829",
-        appId: "1:377837381829:web:d6594a9e9f6af83c1468ac",
-        measurementId: "G-PKCVFN45WE"
-    };
-    firebase.initializeApp(firebaseConfig);
-    var firestore = firebase.firestore();
-
-    // Function to delete a notification
-    function deleteNotification(notification_key) {
-            if (!notification_key) {console.error("لم يتم العثور على الإشعار");
+    <script>
+        var firebaseConfig = {
+            apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
+            authDomain: "shayek-560ec.firebaseapp.com",
+            databaseURL: "https://shayek-560ec-default-rtdb.firebaseio.com",
+            projectId: "shayek-560ec",
+            storageBucket: "shayek-560ec.appspot.com",
+            messagingSenderId: "377837381829",
+            appId: "1:377837381829:web:d6594a9e9f6af83c1468ac",
+            measurementId: "G-PKCVFN45WE"
+        };
+        firebase.initializeApp(firebaseConfig);
+        var firestore = firebase.firestore();
+        
+        // Function to delete a notification
+        function deleteNotification(notification_key) {
+            if (!notification_key) {
+                console.error("لم يتم العثور على الإشعار");
                 return;
             }
-
+        
             $.post('/notification/delete/' + notification_key, function(response) {
                 if (response.success) {
                     fetchNotifications(); 
@@ -141,12 +143,12 @@
                 }
             });
         }
-
+        
         $(document).ready(function() {
             console.log('Custom script loaded');
-
+        
             var notificationsMarkedAsRead = false;
-
+        
             // fetch notifications from the server
             function fetchNotifications() {
                 $.ajax({
@@ -156,7 +158,7 @@
                         if (response.success) {
                             var notifications = response.notifications;
                             var unreadCount = response.unread_count;
-
+        
                             // Update the notifications dropdown
                             var notificationsList = '';
                             if (notifications.length > 0) {
@@ -174,10 +176,10 @@
                             } else {
                                 notificationsList = '<p class="dropdown-item">لايوجد إشعارات</p>';
                             }
-
+        
                             // Update the notifications dropdown content
                             $('.dropdown-menu').html(notificationsList);
-
+        
                             // Update unread count in the bell icon
                             if (unreadCount > 0) {
                                 $('.notification-count').text(unreadCount).show();
@@ -194,7 +196,7 @@
                     }
                 });
             }
-
+        
             // attach click event for notifications
             function attachNotificationClickEvents() {
                 document.querySelectorAll('.notification-item').forEach(item => {
@@ -203,13 +205,13 @@
                     });
                 });
             }
-
+        
             // Fetch notifications every 30 seconds
             setInterval(fetchNotifications, 30000);
-
+        
             // Fetch notifications immediately on page load
             fetchNotifications();
-
+        
             // Handle notifications dropdown list
             $('#notificationsDropdown').on('shown.bs.dropdown', function () {
                 if (!notificationsMarkedAsRead) {
@@ -220,7 +222,7 @@
                             if (response.success) {
                                 notificationsMarkedAsRead = true;
                                 $('.notification-count').text(0).hide();
-
+        
                                 // Remove the 'unread-notification' CSS class from all unread notifications
                                 $('.unread-notification').removeClass('unread-notification');
                             } else {
@@ -235,5 +237,7 @@
             });
         });
         </script>
-  </body>
+        
+
+</body>
 </html>
