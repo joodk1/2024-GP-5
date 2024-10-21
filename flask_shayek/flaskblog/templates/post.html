@@ -6,10 +6,24 @@
         window.history.back();
     }
 
-    function toggleReplyForm(commentId) {
-        const replyForm = document.getElementById(`reply-form-${commentId}`);
-        replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+    function toggleReplyForm(commentId, authorName) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    const replyTextArea = replyForm.querySelector('textarea');
+    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+
+    if (!replyTextArea.value.startsWith(`@${authorName}`)) {
+        replyTextArea.value = `@${authorName} `;
     }
+
+    replyTextArea.focus();
+
+    replyTextArea.addEventListener('input', function() {
+        if (!replyTextArea.value.startsWith(`@${authorName}`)) {
+            replyTextArea.value = `@${authorName} ` + replyTextArea.value.substring(replyTextArea.selectionStart);
+        }
+    });
+}
+
 
     function confirmDelete(deleteUrl) {
         console.log(deleteUrl)
@@ -24,33 +38,47 @@
     }
 }   
 
-     function toggleLike(button) {
-            const postId = button.getAttribute('data-post-id');
-            const isLiked = button.querySelector('i').classList.contains('liked-heart');
-            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-        
-            fetch(url, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (isLiked) {
-                        
-                        button.querySelector('i').classList.remove('fas', 'liked-heart');
-                        button.querySelector('i').classList.add('far');
-                    } else {
-                        
-                        button.querySelector('i').classList.remove('far');
-                        button.querySelector('i').classList.add('fas', 'liked-heart');
-                    }
-                    button.querySelector('span').textContent = data.likes;
+    function toggleLike(button) {
+        const postId = button.getAttribute('data-post-id');
+        const isLiked = button.querySelector('i').classList.contains('liked-heart');
+        const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
+    
+        fetch(url, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (isLiked) {
+                    
+                    button.querySelector('i').classList.remove('fas', 'liked-heart');
+                    button.querySelector('i').classList.add('far');
                 } else {
-                    console.error(data.message);
+                    
+                    button.querySelector('i').classList.remove('far');
+                    button.querySelector('i').classList.add('fas', 'liked-heart');
                 }
-            })
-            .catch(error => console.error('Error:', error));
+                button.querySelector('span').textContent = data.likes;
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function toggleReplies(commentId) {
+        const repliesList = document.getElementById(`replies-${commentId}`);
+        const button = event.target;
+
+        if (repliesList.style.display === 'none' || !repliesList.style.display) {
+            repliesList.style.display = 'block';
+            button.textContent = 'Hide Replies';
+        } else {
+            repliesList.style.display = 'none';
+            button.textContent = 'Show Replies';
         }
+    }
+
 </script>
 
 
@@ -112,8 +140,9 @@
                     <small>{{ comment.timestamp }}</small>
                 </div>
                 <p>{{ comment.body }}</p>
+        
                 {% if current_user.is_authenticated %}
-                <button class="reply-button" onclick="toggleReplyForm('{{ comment.comment_id }}')">رد</button>
+                <button class="reply-button" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
                 {% endif %}
         
                 {% if comment.author_email == current_user.get_id() %}
@@ -128,8 +157,8 @@
                         <button type="submit">أضف الرد</button>
                     </form>
                 </div>
-        
-                <ul class="reply-list">
+                {% if comment.replies %}
+                <ul class="reply-list" id="replies-{{ comment.comment_id }}" style="display:none;">
                     {% for reply in comment.replies %}
                     <li class="reply">
                         <div class="reply-header">
@@ -138,18 +167,33 @@
                         </div>
                         <p>{{ reply.body }}</p>
         
+                        {% if current_user.is_authenticated %}
+                        <button class="reply-button" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
+                        {% endif %}
+        
                         {% if reply.author_email == current_user.get_id() %}
                         <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
                             <button type="button" class="delete-button" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
                         </form>
                         {% endif %}
+        
+                        <div class="reply-form" id="reply-form-{{ reply.reply_id }}" style="display:none;">
+                            <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id, parent_reply_id=reply.reply_id) }}" method="POST">
+                                <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
+                                <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
+                                <button type="submit">أضف الرد</button>
+                            </form>
+                        </div>
                     </li>
                     {% endfor %}
                 </ul>
+                <button class="show-replies-button mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
+                {% endif %}
+
             </li>
             <hr>
             {% endfor %}
-        </ul>
+        </ul>        
         
     </div>
     

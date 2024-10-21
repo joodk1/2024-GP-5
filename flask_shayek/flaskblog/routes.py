@@ -14,33 +14,35 @@ import random
 import string
 import requests
 from itsdangerous import URLSafeTimedSerializer
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model # type: ignore
-import dlib
+# import cv2
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from tensorflow.keras.models import load_model 
+# import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 firebase_database = db.reference()
-detector = dlib.get_frontal_face_detector()
+# detector = dlib.get_frontal_face_detector()
 
-# Loading the pre-trained model
-model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
-model = load_model(model_path)
+# # Loading the pre-trained model
+# model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
+# model = load_model(model_path)
 def parse_timestamp(timestamp):
-    try:
-        return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
-    except (ValueError, TypeError):
-        return datetime(1970, 1, 1)
+     try:
+         return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
+     except (ValueError, TypeError):
+         return datetime(1970, 1, 1)
     
-    
+
+
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
@@ -53,13 +55,14 @@ def fetch_posts():
         formatted_comments = []   
         if isinstance(comments, dict):
             for comment_id, comment_data in comments.items():
-                count +=1
+                count += 1
                 if comment_data:
                     replies = comment_data.get('replies', {})
                     formatted_replies = []
                     if isinstance(replies, dict):
-                        for reply_id, reply in replies.items():
-
+                        sorted_replies = sorted(replies.items(), key=lambda x: datetime.strptime(x[1].get('timestamp', ''), "%b %d, %Y %I:%M%p"))
+                        
+                        for reply_id, reply in sorted_replies:
                             formatted_reply = {
                                 'author': reply.get('author', ''),
                                 'author_email': reply.get('author_email', ''),
@@ -67,9 +70,11 @@ def fetch_posts():
                                 'reply_id': reply.get('reply_id', ''),
                                 'timestamp': reply.get('timestamp', '')
                             }
-                            formatted_replies.append(formatted_reply)    
-                    comment_data['replies'] = formatted_replies   
+                            formatted_replies.append(formatted_reply)
+                    
+                    comment_data['replies'] = formatted_replies
                 formatted_comments.append(comment_data)
+
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
@@ -81,7 +86,9 @@ def fetch_posts():
             'comments': formatted_comments,
             'count': count,
             'likes': post_data.get('likes', 0),  
-            'liked_by': post_data.get('liked_by', []) })
+            'liked_by': post_data.get('liked_by', [])
+        })
+    
     return posts
 
 posts = fetch_posts()
@@ -1107,36 +1114,59 @@ def fetch_notifications(user_email):
     all_notifications = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
 
     notifications = []
+    unread_count = 0 
     user_email = session['user_email']
     if notifications_ref:
         for notification_key, notification_data in all_notifications.items():
-            post_exists = db.reference('posts').child(notification_data.get('post_id')).get() is not None
-            # show notifications only if they're unread and the posts still exist
-            if post_exists and not notification_data.get('is_read', False): 
-                 notifications.append({
-                 'notification_key': notification_key,
-                 'post_title': notification_data.get('post_title'),
-                 'newsoutlet': notification_data.get('newsoutlet'),
-                 'timestamp': notification_data.get('timestamp'),
-                 'is_read': notification_data.get('is_read'),
-                 'post_id': notification_data.get('post_id')
-         })
+            post_id = notification_data.get('post_id')  
+            post_exists = db.reference('posts').child(post_id).get() is not None
+
+            if post_exists:
+                is_read = notification_data.get('is_read', False)
+                notifications.append({
+                    'notification_key': notification_key,  
+                    'post_title': notification_data.get('post_title'),
+                    'newsoutlet': notification_data.get('newsoutlet'),
+                    'timestamp': notification_data.get('timestamp'),
+                    'is_read': is_read,
+                    'post_id': post_id  
+                })
+
+                if not is_read:
+                    unread_count += 1
     notifications.reverse()
-    return notifications
+    return notifications, unread_count
+
+@app.route('/fetch_notifications', methods=['GET'])
+def fetch_notifications_route():
+    user_email = session.get('user_email')
+    if user_email:
+        notifications, unread_count = fetch_notifications(user_email)
+        return jsonify({'success': True, 'notifications': notifications, 'unread_count': unread_count})
+    else:
+        return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'})
 
 
-@app.route('/notification/read/<notification_key>', methods=['POST'])
+
+@app.route('/notifications/mark_all_read', methods=['POST'])
 @login_required
-def mark_notification_as_read(notification_key):
-    user_email = session['user_email']
-    notification_ref = firebase_database.child('notifications').child(notification_key).get()
-    
-    if notification_ref and notification_ref.get('member_id') == user_email:
-        # Mark the notification as read
-        firebase_database.child('notifications').child(notification_key).update({'is_read': True})
-        return jsonify({'success': True, 'message': 'تم تسجيل الإشعار كمقروء'})
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+def mark_all_notifications_as_read():
+    user_email = session.get('user_email')
 
+    if not user_email:
+        return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'}), 401
+
+    # Fetch notifications for the user
+    notifications_ref = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
+
+    if notifications_ref:
+        for notification_key, notification_data in notifications_ref.items():
+            if not notification_data.get('is_read', False):
+                # Mark the notification as read
+                firebase_database.child('notifications').child(notification_key).update({'is_read': True})
+
+        return jsonify({'success': True, 'message': 'تم تحديد جميع الإشعارات كمقروه'}), 200
+    return jsonify({'success': False, 'message': 'No notifications found'}), 404
 
 @app.route('/notification/delete/<notification_key>', methods=['POST'])
 @login_required
@@ -1149,8 +1179,7 @@ def delete_notification(notification_key):
         firebase_database.child('notifications').child(notification_key).delete()
         return jsonify({'success': True, 'message': 'تم حذف الإشعار بنجاح'})
     
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
-
+    return jsonify({'success': False, 'message': 'لم يتم إيجاد الإشعار'})
 
 @app.route('/post/<string:post_id>')
 def post(post_id):
@@ -1159,16 +1188,17 @@ def post(post_id):
 
     if not post:
         abort(404)  
-
+    print(post)
     return render_template('post.html', post=post)
 
 @app.context_processor
 def inject_notifications():
     if 'user_email' in session:  
-        notifications = fetch_notifications(session['user_email']) 
+        notifications, unread_count = fetch_notifications(session['user_email'])
     else:
         notifications = [] 
-    return {'notifications': notifications} 
+    unread_count = 0  
+    return {'notifications': notifications, 'unread_count': unread_count} 
 
 @app.route('/post/<string:post_id>/add_comment', methods=['POST'])
 @login_required
@@ -1209,9 +1239,10 @@ def add_comment(post_id):
     return redirect(url_for('post', post_id=post_id))
 
 
-@app.route('/post/<string:post_id>/reply/<string:comment_id>', methods=['POST'])
+@app.route('/post/<string:post_id>/reply/<string:comment_id>', defaults={'parent_reply_id': None}, methods=['POST'])
+@app.route('/post/<string:post_id>/reply/<string:comment_id>/<string:parent_reply_id>', methods=['POST'])
 @login_required
-def reply_comment(post_id, comment_id):
+def reply_comment(post_id, comment_id, parent_reply_id):
     user_email = current_user.get_id()
     if not user_email:
         flash('الوصول غير مصرح به', 'danger')
@@ -1236,7 +1267,9 @@ def reply_comment(post_id, comment_id):
         'author': username,
         'author_email': user_email,
         'body': reply_body,
-        'timestamp': timestamp
+        'timestamp': timestamp,
+        'parent_commentId': comment_id,
+        'parent_replyId': parent_reply_id
     }
 
     db.reference(f'posts/{post_id}/comment/{comment_id}/replies').child(reply_id).set(reply_data)
