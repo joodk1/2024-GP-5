@@ -58,21 +58,25 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-right custom-notification-menu" aria-labelledby="notificationsDropdown">
                         {% if notifications %}
-                            <ul class="list-group">
-                                {% for notification in notifications %}
-                                <li class="list-group-item notification-item {% if not notification.is_read %} unread-notification {% endif %}" data-href="{{ url_for('post', post_id=notification.post_id) }}">
-                                    <div>
-                                        <p>نشرة جديدة من {{ notification.newsoutlet }}</p>
-                                        <p>بعنوان: {{ notification.post_title }}</p>
-                                        <p>{{ notification.timestamp }}</p>
-                                    </div>
-                                    <div>
-                                        <button class="btn btn-sm btn-danger" onclick="deleteNotification('{{ notification.notification_key }}')">حذف</button>
-                                    </div>
-                                </li>                                                                                                                                                      
-                                {% endfor %}
-                            
-                            </ul>
+                        <ul class="list-group">
+                            {% for notification in notifications %}
+                            <li class="list-group-item notification-item {% if not notification.is_read %} unread-notification {% endif %}" data-href="{{ url_for('post', post_id=notification.post_id) }}" style="cursor: pointer;">
+                                
+                                <!-- Notification content -->
+                                <div class="notification-content">
+                                    <p>نشرة جديدة من {{ notification.newsoutlet }}</p>
+                                    <p>بعنوان: {{ notification.post_title }}</p>
+                                    <p>{{ notification.timestamp }}</p>
+                                </div>
+                                
+                                <!-- Delete button-->
+                                <div class="float-right">
+                                    <button class="btn btn-sm btn-danger delete-notification-btn" onclick="deleteNotification('{{ notification.notification_key }}', event)">حذف</button>
+                                </div>
+                        
+                            </li>
+                            {% endfor %}
+                        </ul>                        
                         {% else %}
                             <p class="dropdown-item">لايوجد إشعارات</p>
                         {% endif %}
@@ -115,6 +119,7 @@
     </footer>
 
     <script>
+        // Firebase configuration
         var firebaseConfig = {
             apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
             authDomain: "shayek-560ec.firebaseapp.com",
@@ -125,30 +130,34 @@
             appId: "1:377837381829:web:d6594a9e9f6af83c1468ac",
             measurementId: "G-PKCVFN45WE"
         };
+        
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         var firestore = firebase.firestore();
-        
+    
         // Function to delete a notification
-        function deleteNotification(notification_key) {
+        function deleteNotification(notification_key, event) {
             if (!notification_key) {
                 console.error("لم يتم العثور على الإشعار");
                 return;
             }
-            
+    
+            event.stopPropagation();
+    
             $.post('/notification/delete/' + notification_key, function(response) {
                 if (response.success) {
-                    fetchNotifications(); 
+                    fetchNotifications();  // Refresh notifications after deleting
                 } else {
                     alert(response.message);
                 }
             });
         }
-        
+    
         $(document).ready(function() {
-        
+    
             var notificationsMarkedAsRead = false;
-        
-            // fetch notifications from the server
+    
+            // Fetch notifications from the server
             function fetchNotifications() {
                 $.ajax({
                     url: "{{ url_for('fetch_notifications_route') }}",
@@ -157,34 +166,41 @@
                         if (response.success) {
                             var notifications = response.notifications;
                             var unreadCount = response.unread_count;
-        
-                            // Update the notifications dropdown
+    
+                            // Build the notifications list
                             var notificationsList = '';
                             if (notifications.length > 0) {
                                 notifications.forEach(function(notification) {
                                     notificationsList += `
-                                        <li class="list-group-item notification-item ${notification.is_read ? '' : 'unread-notification'}" data-href="{{ url_for('post', post_id='') }}${notification.post_id}" style="cursor: pointer;">
-                                            <p>نشرة جديدة من ${notification.newsoutlet}</p>
-                                            <p>بعنوان: ${notification.post_title}</p>
-                                            <p>${notification.timestamp}</p>
+                                        <li class="list-group-item notification-item ${notification.is_read ? '' : 'unread-notification'}" 
+                                            data-href="{{ url_for('post', post_id='') }}${notification.post_id}" 
+                                            style="cursor: pointer;">
+                                            <div class="notification-content">
+                                                <p>نشرة جديدة من ${notification.newsoutlet}</p>
+                                                <p>بعنوان: ${notification.post_title}</p>
+                                                <p>${notification.timestamp}</p>
+                                            </div>
                                             <div class="float-right">
-                                                <button class="btn btn-sm btn-danger" onclick="deleteNotification('${notification.notification_key}')">حذف</button>
+                                                <button class="btn btn-sm btn-danger delete-notification-btn" 
+                                                        onclick="deleteNotification('${notification.notification_key}', event)">حذف</button>
                                             </div>
                                         </li>`;
                                 });
                             } else {
                                 notificationsList = '<p class="dropdown-item">لايوجد إشعارات</p>';
                             }
-        
+    
                             // Update the notifications dropdown content
                             $('.dropdown-menu').html(notificationsList);
-        
+    
                             // Update unread count in the bell icon
                             if (unreadCount > 0) {
                                 $('.notification-count').text(unreadCount).show();
                             } else {
                                 $('.notification-count').text(0).hide();
                             }
+    
+                            // Attach click events to notification items after rendering
                             attachNotificationClickEvents();
                         } else {
                             console.error('حدث خطأ عند محاولة عرض الإشعارات', response.message);
@@ -195,22 +211,25 @@
                     }
                 });
             }
-        
-            // attach click event for notifications
+    
+            // Function to handle clicking on notifications to navigate to the post
             function attachNotificationClickEvents() {
                 document.querySelectorAll('.notification-item').forEach(item => {
                     item.addEventListener('click', function() {
-                        window.location.href = this.getAttribute('data-href');
+                        var href = this.getAttribute('data-href');
+                        if (href) {
+                            window.location.href = href;
+                        }
                     });
                 });
             }
-        
+    
             // Fetch notifications every 30 seconds
             setInterval(fetchNotifications, 30000);
-        
+    
             // Fetch notifications immediately on page load
             fetchNotifications();
-        
+    
             // Handle notifications dropdown list
             $('#notificationsDropdown').on('shown.bs.dropdown', function () {
                 if (!notificationsMarkedAsRead) {
@@ -221,7 +240,7 @@
                             if (response.success) {
                                 notificationsMarkedAsRead = true;
                                 $('.notification-count').text(0).hide();
-        
+    
                                 // Remove the 'unread-notification' CSS class from all unread notifications
                                 $('.unread-notification').removeClass('unread-notification');
                             } else {
@@ -235,8 +254,6 @@
                 }
             });
         });
-        </script>
-        
-
+    </script>    
 </body>
 </html>
