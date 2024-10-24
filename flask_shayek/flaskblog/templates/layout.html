@@ -134,7 +134,7 @@
                 console.error("لم يتم العثور على الإشعار");
                 return;
             }
-        
+            
             $.post('/notification/delete/' + notification_key, function(response) {
                 if (response.success) {
                     fetchNotifications(); 
@@ -145,7 +145,6 @@
         }
         
         $(document).ready(function() {
-            console.log('Custom script loaded');
         
             var notificationsMarkedAsRead = false;
         

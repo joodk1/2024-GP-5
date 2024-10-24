@@ -24,17 +24,18 @@ from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 firebase_database = db.reference()
-# detector = dlib.get_frontal_face_detector()
+detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = r'C:\Users\huaweii\OneDrive\Documents\GitHub\2024-GP-5\flask_shayek\ResNet50_Model_Web.h5'
+model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
 model = load_model(model_path)
+
 def parse_timestamp(timestamp):
      try:
          return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
@@ -170,7 +171,6 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
     cap.release()
     return np.array(processed_frames)
-
 
 @app.route('/shayekModel',methods=['GET','POST'])
 def shayekModel():  
@@ -1115,21 +1115,28 @@ def fetch_notifications(user_email):
     all_notifications = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
 
     notifications = []
+    unread_count = 0  
     user_email = session['user_email']
 
     if notifications_ref:
         for notification_key, notification_data in all_notifications.items():
-            post_exists = db.reference('posts').child(notification_data.get('post_id')).get() is not None
-            # show notifications only if they're unread and the posts still exist
-            if post_exists and not notification_data.get('is_read', False): 
-                 notifications.append({
-                 'notification_key': notification_key,
-                 'post_title': notification_data.get('post_title'),
-                 'newsoutlet': notification_data.get('newsoutlet'),
-                 'timestamp': notification_data.get('timestamp'),
-                 'is_read': notification_data.get('is_read'),
-                 'post_id': notification_data.get('post_id')
-         })
+            post_id = notification_data.get('post_id')  
+            post_exists = db.reference('posts').child(post_id).get() is not None
+
+            if post_exists:
+                is_read = notification_data.get('is_read', False)
+                notifications.append({
+                    'notification_key': notification_key,  
+                    'post_title': notification_data.get('post_title'),
+                    'newsoutlet': notification_data.get('newsoutlet'),
+                    'timestamp': notification_data.get('timestamp'),
+                    'is_read': is_read,
+                    'post_id': post_id  
+                })
+                
+                if not is_read:
+                    unread_count += 1
+
     notifications.reverse()
     return notifications, unread_count
 
@@ -1146,18 +1153,25 @@ def fetch_notifications_route():
 
 @app.route('/notifications/mark_all_read', methods=['POST'])
 @login_required
-def mark_notification_as_read(notification_key):
-    user_email = session['user_email']
-    notification_ref = firebase_database.child('notifications').child(notification_key).get()
-    
-    if notification_ref and notification_ref.get('member_id') == user_email:
-        # Mark the notification as read
-        firebase_database.child('notifications').child(notification_key).update({'is_read': True})
-        return jsonify({'success': True, 'message': 'تم تسجيل الإشعار كمقروء'})
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+def mark_all_notifications_as_read():
+    user_email = session.get('user_email')
+
+    if not user_email:
+        return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'}), 401
+
+    # Fetch notifications for the user
+    notifications_ref = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
+
+    if notifications_ref:
+        for notification_key, notification_data in notifications_ref.items():
+            if not notification_data.get('is_read', False):
+                # Mark the notification as read
+                firebase_database.child('notifications').child(notification_key).update({'is_read': True})
 
         return jsonify({'success': True, 'message': 'تم تحديد جميع الإشعارات كمقروه'}), 200
+    
     return jsonify({'success': False, 'message': 'No notifications found'}), 404
+
 
 @app.route('/notification/delete/<notification_key>', methods=['POST'])
 @login_required
@@ -1170,7 +1184,7 @@ def delete_notification(notification_key):
         firebase_database.child('notifications').child(notification_key).delete()
         return jsonify({'success': True, 'message': 'تم حذف الإشعار بنجاح'})
     
-    return jsonify({'success': False, 'message': 'لم نستطع إيجاد الإشعار'})
+    return jsonify({'success': False, 'message': 'لم يتم إيجاد الإشعار'})
 
 
 @app.route('/post/<string:post_id>')
@@ -1180,16 +1194,18 @@ def post(post_id):
 
     if not post:
         abort(404)  
-    print(post)
+
     return render_template('post.html', post=post)
 
 @app.context_processor
 def inject_notifications():
     if 'user_email' in session:  
-        notifications = fetch_notifications(session['user_email']) 
+        notifications, unread_count = fetch_notifications(session['user_email']) 
     else:
         notifications = [] 
-    return {'notifications': notifications} 
+        unread_count = 0  
+    return {'notifications': notifications, 'unread_count': unread_count}
+
 
 @app.route('/post/<string:post_id>/add_comment', methods=['POST'])
 @login_required
@@ -1294,7 +1310,7 @@ def delete_comment(post_id, comment_id):
 @login_required
 def delete_reply(post_id, comment_id, reply_id):
     user_email = current_user.get_id()
-    
+
     if not user_email:
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
@@ -1358,7 +1374,7 @@ def unlike_post(post_id):
     if not post_data:
         return jsonify({'success': False, 'message': 'لم يتم إيجاد النشرة'}), 404
 
-    
+
     liked_by = post_data.get('liked_by', [])
 
     if user_email not in liked_by:

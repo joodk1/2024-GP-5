@@ -327,7 +327,6 @@ a.article-title:hover {
   padding: 0;
   }
 
-  
   .comment-header {
   display: flex;
   align-items: center;
@@ -344,8 +343,6 @@ a.article-title:hover {
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   }
-
-
 
   .comment-header, .reply-header {
       justify-content: space-between;
@@ -364,7 +361,6 @@ a.article-title:hover {
   margin-top: 10px;
   background-color: #f8f9fa;
   }
-  
 
   .reply-button:hover {
   background-color: #3f5e22;
@@ -417,4 +413,34 @@ color: red ;
 
 .post-comments span {
   margin-right: 10px; 
+}
+
+.unread-notification {
+  background-color: #ffffcc;
+}
+
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 15px;
+  font-size: 16px;
+  position: relative;
+}
+
+.notification-item .btn-danger {
+  align-self: flex-start; 
+  margin-top: 10px;
+}
+
+.list-group-item {
+  position: relative;
+}
+
+.custom-notification-menu {
+  max-height: 350px;
+  overflow-y: auto;
+  width: 300px;
+  transform: translateX(-130px);
 }
