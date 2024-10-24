@@ -119,7 +119,7 @@
     </footer>
 
     <script>
-        // Firebase configuration
+        
         var firebaseConfig = {
             apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
             authDomain: "shayek-560ec.firebaseapp.com",
@@ -131,11 +131,11 @@
             measurementId: "G-PKCVFN45WE"
         };
         
-        // Initialize Firebase
+        
         firebase.initializeApp(firebaseConfig);
         var firestore = firebase.firestore();
     
-        // Function to delete a notification
+        
         function deleteNotification(notification_key, event) {
             if (!notification_key) {
                 console.error("لم يتم العثور على الإشعار");
@@ -146,7 +146,7 @@
     
             $.post('/notification/delete/' + notification_key, function(response) {
                 if (response.success) {
-                    fetchNotifications();  // Refresh notifications after deleting
+                    fetchNotifications();  
                 } else {
                     alert(response.message);
                 }
@@ -156,8 +156,7 @@
         $(document).ready(function() {
     
             var notificationsMarkedAsRead = false;
-    
-            // Fetch notifications from the server
+
             function fetchNotifications() {
                 $.ajax({
                     url: "{{ url_for('fetch_notifications_route') }}",
@@ -167,7 +166,7 @@
                             var notifications = response.notifications;
                             var unreadCount = response.unread_count;
     
-                            // Build the notifications list
+                           
                             var notificationsList = '';
                             if (notifications.length > 0) {
                                 notifications.forEach(function(notification) {
@@ -190,17 +189,17 @@
                                 notificationsList = '<p class="dropdown-item">لايوجد إشعارات</p>';
                             }
     
-                            // Update the notifications dropdown content
+                            
                             $('.dropdown-menu').html(notificationsList);
     
-                            // Update unread count in the bell icon
+                           
                             if (unreadCount > 0) {
                                 $('.notification-count').text(unreadCount).show();
                             } else {
                                 $('.notification-count').text(0).hide();
                             }
     
-                            // Attach click events to notification items after rendering
+                            
                             attachNotificationClickEvents();
                         } else {
                             console.error('حدث خطأ عند محاولة عرض الإشعارات', response.message);
@@ -212,7 +211,7 @@
                 });
             }
     
-            // Function to handle clicking on notifications to navigate to the post
+            
             function attachNotificationClickEvents() {
                 document.querySelectorAll('.notification-item').forEach(item => {
                     item.addEventListener('click', function() {
@@ -224,13 +223,13 @@
                 });
             }
     
-            // Fetch notifications every 30 seconds
+            
             setInterval(fetchNotifications, 30000);
     
-            // Fetch notifications immediately on page load
+            
             fetchNotifications();
     
-            // Handle notifications dropdown list
+            
             $('#notificationsDropdown').on('shown.bs.dropdown', function () {
                 if (!notificationsMarkedAsRead) {
                     $.ajax({
@@ -241,7 +240,7 @@
                                 notificationsMarkedAsRead = true;
                                 $('.notification-count').text(0).hide();
     
-                                // Remove the 'unread-notification' CSS class from all unread notifications
+                                
                                 $('.unread-notification').removeClass('unread-notification');
                             } else {
                                 console.log('حدث خطأ عند محاولة وضع الإشعارات كمقروءة', response.message);

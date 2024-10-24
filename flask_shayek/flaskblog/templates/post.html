@@ -1,10 +1,22 @@
 {% extends "layout.html" %}
 {% block content %}
+<div id="auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}"></div>
 <button onclick="goBack()" class="btn form-buttons">&#8592; عودة </button>
 <script>
+    const feedUrl = "{{ url_for('home', filter=filter) }}"; 
+    const isAuthenticated = document.getElementById('auth-status').getAttribute('data-authenticated') === 'true';
+    const storedFilter = sessionStorage.getItem('filter') || 'followed';
+    
     function goBack() {
+       if (!isAuthenticated) {
         window.history.back();
+        return;
+        }
+     
+    let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+    window.location.href = feedUrlWithFilter;
     }
+
 
     function toggleReplyForm(commentId, authorName) {
     const replyForm = document.getElementById(`reply-form-${commentId}`);
@@ -39,6 +51,10 @@
 }   
 
     function toggleLike(button) {
+        if (!isAuthenticated) {
+        alert('يرجى تسجيل الدخول أولاً!');
+        return;
+    }
         const postId = button.getAttribute('data-post-id');
         const isLiked = button.querySelector('i').classList.contains('liked-heart');
         const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
@@ -78,6 +94,8 @@
             button.textContent = 'Show Replies';
         }
     }
+
+    
 
 </script>
 

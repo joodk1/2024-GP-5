@@ -16,8 +16,15 @@
     </div>
     
     <script>
+        const feedUrl = "{{ url_for('home', filter=filter) }}";
         document.addEventListener('DOMContentLoaded', function () {
             const buttons = document.querySelectorAll('.post-filter-btn');
+            let currentFilter = sessionStorage.getItem('filter');
+
+        if (!currentFilter) {
+        currentFilter = 'followed';  
+        sessionStorage.setItem('filter', currentFilter); }
+
     
             buttons.forEach(button => {
                 button.addEventListener('click', function () {
@@ -25,8 +32,56 @@
                     this.classList.add('green-button');
                 });
             });
-        });
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, scrollPosition);
+            sessionStorage.removeItem('scrollPosition'); 
+        }
+        buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const selectedFilter = this.dataset.filter;
+            storeFilter(selectedFilter); });});
+
+            function storeScrollPosition() {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
+    function storeFilter(filter) {
+    sessionStorage.setItem('filter', filter);}
+    window.location.href = "{{ url_for('home', filter='') }}" + filter;});
+    
+
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    });
+
+    
+        function toggleLike(button) {
+            const postId = button.getAttribute('data-post-id');
+            const isLiked = button.querySelector('i').classList.contains('liked-heart');
+            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
         
+            fetch(url, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (isLiked) {
+                        
+                        button.querySelector('i').classList.remove('fas', 'liked-heart');
+                        button.querySelector('i').classList.add('far');
+                    } else {
+                        
+                        button.querySelector('i').classList.remove('far');
+                        button.querySelector('i').classList.add('fas', 'liked-heart');
+                    }
+                    button.querySelector('span').textContent = data.likes;
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
     </script>  
     <style>
         
@@ -43,7 +98,7 @@
             </div> 
             <br>
     
-            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
                 <h3 class="article-title">{{ post.title }}</h3>
                     <p class="article-content">{{ post.content }}</p>
                     
@@ -78,34 +133,7 @@
        
         </div>
     </article>
-    <script>
-        function toggleLike(button) {
-            const postId = button.getAttribute('data-post-id');
-            const isLiked = button.querySelector('i').classList.contains('liked-heart');
-            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-        
-            fetch(url, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (isLiked) {
-                        
-                        button.querySelector('i').classList.remove('fas', 'liked-heart');
-                        button.querySelector('i').classList.add('far');
-                    } else {
-                        
-                        button.querySelector('i').classList.remove('far');
-                        button.querySelector('i').classList.add('fas', 'liked-heart');
-                    }
-                    button.querySelector('span').textContent = data.likes;
-                } else {
-                    console.error(data.message);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        } </script>
+
     
     {% endfor %}
 

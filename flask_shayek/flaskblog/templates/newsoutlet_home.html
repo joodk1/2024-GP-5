@@ -49,7 +49,7 @@
                 <small class="text-muted">{{ post.timestamp }}</small>
             </div> 
             <br>
-            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
             <h3 class="article-title">{{ post.title }}</h3>
             <p class="article-content">{{ post.content }}
                 {% if post.media %}
@@ -121,7 +121,22 @@
                 }
             })
             .catch(error => console.error('Error:', error));
-        } </script>
+        } 
+        function storeScrollPosition() {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, scrollPosition);
+            sessionStorage.removeItem('scrollPosition');
+        }
+    });
+
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    });</script>
     
 {% endfor %}
 {% endblock content %}
