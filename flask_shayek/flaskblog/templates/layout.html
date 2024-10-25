@@ -29,7 +29,7 @@
             <div class="container d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     {% if session['logged_in'] == True %}
-                        <a class="nav-item nav-link" href="{{ url_for('logout') }}" onclick="return confirmLogout()">تسجيل الخروج</a>
+                        <a class="nav-item nav-link" href="{{ url_for('logout') }}" >تسجيل الخروج</a>
                     {% else %}
                         <a class="nav-item nav-link" href="{{ url_for('member_register') }}">مستخدم جديد</a>
                         <a class="nav-item nav-link" href="{{ url_for('member_login') }}">تسجيل الدخول</a>
@@ -46,7 +46,7 @@
                     <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
                     {% if session['logged_in'] == True %}
                         <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
-                        <a class="nav-item nav-link" href="{{ url_for('home') }}">الرئيسية</a>
+                        <a class="nav-item nav-link" href="{{ url_for('home') }}" onclick="goToHome()">الرئيسية</a>
 
                 <!-- Notifications-->
                 <div class="nav-item dropdown" id="notificationsDropdown">
@@ -253,6 +253,12 @@
                 }
             });
         });
+
+       
+    function goToHome() {
+        sessionStorage.clear();
+    }
+
     </script>    
 </body>
 </html>

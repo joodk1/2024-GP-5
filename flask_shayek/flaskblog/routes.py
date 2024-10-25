@@ -24,7 +24,7 @@ from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -33,8 +33,8 @@ firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
-model = load_model(model_path)
+#model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
+#model = load_model(model_path)
 
 def parse_timestamp(timestamp):
      try:
@@ -218,7 +218,7 @@ def upload_video():
 @login_required
 def home():
     user_email = session.get('user_email') 
-    filter_option = request.args.get('filter', 'followed')  # Default to 'followed'
+    filter_option = request.args.get('filter', 'followed')  
 
     if user_email:
         user_data = load_user(user_email)
@@ -239,17 +239,17 @@ def home():
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
 
-                    # Fetch posts based on the filter (all or followed)
+                    
                     if filter_option == 'followed':
                         followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
 
                         if followed_users_ref:
-                            # Create a mapping from user IDs to newsoutlet_ids
+                            
                             followed_users_emails = {user: data.get('newsoutlet_id') for user, data in followed_users_ref.items() if data.get('newsoutlet_id')}
                         else:
                             followed_users_emails = {}
 
-                        # Fetch posts from all followed users
+                    
                         posts = []
                         for user_id, newsoutlet_id in followed_users_emails.items():
                             user_posts = fetch_posts_by_user(newsoutlet_id)
@@ -383,7 +383,6 @@ def profile():
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    # Check if user is a news outlet or member
     user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
     user_type = 'newsoutlet' if user_ref else 'member'
 
@@ -399,7 +398,7 @@ def profile():
     followed_news_outlets = []
     followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
 
-    # Fetch followed newsoutlets
+
     if followed_users_ref:
         for data in followed_users_ref.values():
             email = data.get('newsoutlet_id')
@@ -452,7 +451,7 @@ def profile():
 @app.route('/profile/<username>')
 def user_profile(username):
     user = None
-    current_user_email = session.get('user_email')  # Get the current logged-in user's email if logged in
+    current_user_email = session.get('user_email')  
 
     newsoutlet_ref = firebase_database.child('newsoutlet')
     newsoutlet_data = newsoutlet_ref.get()
@@ -480,7 +479,7 @@ def user_profile(username):
                         if not member_email:
                             continue
 
-                        # Search for the follower in both 'users' and 'newsoutlet' tables
+                        
                         result = db.reference('users').order_by_child('email').equal_to(member_email).get()
                         if not result:
                             result = db.reference('newsoutlet').order_by_child('email').equal_to(member_email).get()
@@ -492,12 +491,12 @@ def user_profile(username):
                             else:
                                 followers_usernames.append(member_email)  
 
-                # Initialize to False by default if the user is not logged in
+               
                 is_following = False
                 is_getting_notifications = False
                 followed_news_outlets = []
 
-                # check follow and notification data if the current user is logged in
+                
                 if current_user_email:
                     is_following = any(
                         isinstance(follower, dict) and follower.get('member_id') == current_user_email
@@ -509,7 +508,7 @@ def user_profile(username):
                         for notification in current_notifications
                     )
 
-                    # Fetch the newsoutlets the current profile is following
+                    
                     followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(useremail).get()
                     if followed_users_ref:
                         for data in followed_users_ref.values():
@@ -547,7 +546,7 @@ def user_profile(username):
 
                 followed_news_outlets = []
                 if current_user_email:
-                    # Fetch the news outlets the current member/newsoutlet follows
+                 
                     followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(user['email']).get()
                     if followed_users_ref:
                         for data in followed_users_ref.values():
@@ -563,7 +562,7 @@ def user_profile(username):
                     followed_news_outlets=followed_news_outlets
                 )
 
-    # If no profile found, show an error
+    
     flash('لم نستطع إيجاد الحساب.', 'danger')
     return redirect(request.referrer)
 
@@ -836,7 +835,7 @@ def submit_post():
                     'post_id': post_id 
                 }
 
-                # Push notification to Firebase
+                
                 db.reference('notifications').push(notification_data)
 
                 print(f"أرسلنا الإشعار إلى: {member_email}")  
@@ -868,7 +867,7 @@ def logout():
     session.clear()
     logout_user()
     flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل خروجك بنجاح', 'success')
-    return redirect(url_for('homepage'))
+    return redirect(url_for('clear_session_storage'))
     
 @app.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
@@ -936,17 +935,17 @@ def follow_newsoutlet(username):
         newsoutlet_key, newsoutlet_info = list(newsoutlet_data.items())[0]
         member_id = session['user_email']  
 
-        # Prevent the newsoutletس from following themselves
+        
         if member_id == useremail:
             return jsonify({'success': False, 'message': 'لايمكنك متابعة حسابك الشحصي'})
 
         current_followers = newsoutlet_info.get('followers', [])
 
-        # Ensure current_followers is a list of dictionaries
+        
         if not isinstance(current_followers, list):
             current_followers = []
 
-        # Check if the member is already following the news outlet
+        
         is_already_following = any(follow.get('member_id') == member_id for follow in current_followers)
         if is_already_following:
             return jsonify({'success': False, 'message': 'انت تتابع هذه المنصة بالفعل'})
@@ -960,7 +959,7 @@ def follow_newsoutlet(username):
         current_followers.append({'member_id': member_id})
         firebase_database.child('newsoutlet').child(newsoutlet_key).update({'followers': current_followers})
 
-        # Get usernames of all followers (members and newsoutlets)
+        
         follower_usernames = set()  
         for follower in current_followers:
             member_email = follower['member_id']
@@ -968,13 +967,13 @@ def follow_newsoutlet(username):
             if member_email == useremail:
                 continue
 
-            # Check if the follower is a member
+            
             user_data = firebase_database.child('users').order_by_child('email').equal_to(member_email).get()
             if user_data:
                 user_key, user_info = list(user_data.items())[0]
                 follower_usernames.add(user_info.get('username'))
 
-            # Check if the follower is a news outlet
+            
             newsoutlet_data = firebase_database.child('newsoutlet').order_by_child('email').equal_to(member_email).get()
             if newsoutlet_data:
                 newsoutlet_key, newsoutlet_info = list(newsoutlet_data.items())[0]
@@ -1006,16 +1005,16 @@ def unfollow_newsoutlet(username):
 
         current_followers = [follow for follow in current_followers if follow.get('member_id') != member_id]
 
-        # Update the followers list in the database
+        
         firebase_database.child('newsoutlet').child(newsoutlet_key).update({'followers': current_followers})
 
-        # Remove the follow entry from the 'follows' collection
+        
         follow_entries = firebase_database.child('follows').order_by_child('member_id').equal_to(member_id).get()
         for key, entry in follow_entries.items():
             if entry.get('newsoutlet_id') == useremail:
                 firebase_database.child('follows').child(key).delete()
 
-        #Unnotify the user after unfollowing
+   
         unnotify_newsoutlet(member_id)
 
     
@@ -1159,13 +1158,13 @@ def mark_all_notifications_as_read():
     if not user_email:
         return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'}), 401
 
-    # Fetch notifications for the user
+    
     notifications_ref = firebase_database.child('notifications').order_by_child('member_id').equal_to(user_email).get()
 
     if notifications_ref:
         for notification_key, notification_data in notifications_ref.items():
             if not notification_data.get('is_read', False):
-                # Mark the notification as read
+                
                 firebase_database.child('notifications').child(notification_key).update({'is_read': True})
 
         return jsonify({'success': True, 'message': 'تم تحديد جميع الإشعارات كمقروه'}), 200
@@ -1387,3 +1386,12 @@ def unlike_post(post_id):
         'liked_by': liked_by
     })
     return jsonify({'success': True, 'likes': likes})
+
+@app.route('/clear_session_storage')
+def clear_session_storage():
+    return '''
+    <script>
+        sessionStorage.clear();
+        window.location.href = '/';
+    </script>
+    '''
