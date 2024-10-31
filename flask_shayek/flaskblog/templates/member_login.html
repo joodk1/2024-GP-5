@@ -4,14 +4,19 @@
         <form method="POST" action="">
             {{ form.hidden_tag() }}
             <div class="z">
-    
-                 <a href="{{ url_for('newsoutlet_login') }}" class="white-button post-filter-btn btn mt-3">تسجيل دخول كصحيفة</a>
-             
-                 <a href="{{ url_for('member_login') }}" class="white-button post-filter-btn btn mt-3">تسجيل دخول كعضو</a>
-             
-                 <br>
-                 <br>
-             
+                <div class="btn-group" role="group" aria-label="Login Options">
+                        <a href="{{ url_for('newsoutlet_login') }}" 
+                           class="btn btn-outline-primary white-button post-filter-btn {% if filter == 'newspaperlog' %}active green-button{% endif %}" 
+                           data-filter="newspaperlog">
+                           تسجيل دخول كصحيفة
+                        </a>
+                        <a href="{{ url_for('member_login') }}" 
+                        class="btn btn-outline-primary white-button post-filter-btn {% if filter == 'memberlog' or not filter %}active green-button{% endif %}" 
+                           data-filter="memberlog">
+                           تسجيل دخول كعضو
+                        </a>
+                    </div>
+                    <br><br>
              </div>
             <fieldset class="form-group">
                 
@@ -57,17 +62,23 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const buttons = document.querySelectorAll('.post-filter-btn');
-        
-            buttons.forEach(button => {
-                button.addEventListener('click', function () {
-                    buttons.forEach(btn => btn.classList.remove('green-button'));
-                    this.classList.add('green-button');
-                });
-            });
+    document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.post-filter-btn');
+
+
+    buttons.forEach(button => {
+        button.addEventListener('click', function (event) {
+            buttons.forEach(btn => btn.classList.remove('green-button'));
+            this.classList.add('green-button');
+            sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
         });
-    </script>
+    });
+});
+ </script>
+        
+
+
+
     
 {% endblock content %}
 

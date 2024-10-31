@@ -117,10 +117,64 @@
                             {% endif %}
                         {% endif %}
                     </p>
+
+                     <div class="post-comments">
+                        <a href="{{ url_for('post', post_id=post.post_id) }}" >
+                        <i class="far fa-comment"></i>
+                        <span>{{ post.count }}</span>
+                    </a>
+                        <div style="margin-left: -5px;">
+                        <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                            <i class="far fa-heart 
+                                {% if current_user.get_id() in post.liked_by %} 
+                                    fas liked-heart 
+                                {% endif %}"></i> 
+                            <span>{{ post.likes }}</span>
+                        </button></div>
+                    </div>
                 </div>
             </article>
         {% endif %}    
     {% endfor %}
+    <script>
+        function toggleLike(button) {
+            const postId = button.getAttribute('data-post-id');
+            const isLiked = button.querySelector('i').classList.contains('liked-heart');
+            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
+        
+            fetch(url, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (isLiked) {
+                        
+                        button.querySelector('i').classList.remove('fas', 'liked-heart');
+                        button.querySelector('i').classList.add('far');
+                    } else {
+                        
+                        button.querySelector('i').classList.remove('far');
+                        button.querySelector('i').classList.add('fas', 'liked-heart');
+                    }
+                    button.querySelector('span').textContent = data.likes;
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        document.addEventListener("DOMContentLoaded", function () {
+        const scrollPosition = sessionStorage.getItem("scrollPosition");
+        if (scrollPosition) {
+            window.scrollTo(0, parseInt(scrollPosition));
+            sessionStorage.removeItem("scrollPosition");
+        }
+        window.addEventListener("beforeunload", function () {
+            sessionStorage.setItem("scrollPosition", window.scrollY);
+        });
+    });
+    </script>
 {% else %}
     <div>
         <h5>لا توجد منشورات</h5>

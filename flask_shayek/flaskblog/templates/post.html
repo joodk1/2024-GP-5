@@ -6,18 +6,28 @@
     const feedUrl = "{{ url_for('home', filter=filter) }}"; 
     const isAuthenticated = document.getElementById('auth-status').getAttribute('data-authenticated') === 'true';
     const storedFilter = sessionStorage.getItem('filter') || 'followed';
-    
+
     function goBack() {
-       if (!isAuthenticated) {
+    if (!isAuthenticated) {
         window.history.back();
         return;
-        }
-     
-    let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
-    window.location.href = feedUrlWithFilter;
     }
 
+    const referrer = document.referrer; 
+    const myProfileUrl = "{{ url_for('profile') }}"; 
+    const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
 
+    if (referrer && profilePagePattern.test(referrer)) {
+        window.location.href = referrer; 
+    } else if (referrer && referrer.includes(myProfileUrl)) {
+        window.location.href = myProfileUrl;
+    } else {
+        let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+        window.location.href = feedUrlWithFilter;
+    }
+}
+    
+ 
     function toggleReplyForm(commentId, authorName) {
     const replyForm = document.getElementById(`reply-form-${commentId}`);
     const replyTextArea = replyForm.querySelector('textarea');
@@ -88,10 +98,10 @@
 
         if (repliesList.style.display === 'none' || !repliesList.style.display) {
             repliesList.style.display = 'block';
-            button.textContent = 'Hide Replies';
+            button.textContent = 'إخفاء الردود';
         } else {
             repliesList.style.display = 'none';
-            button.textContent = 'Show Replies';
+            button.textContent = 'إظهار الردود';
         }
     }
 
@@ -155,7 +165,7 @@
         {% if current_user.is_authenticated %}
         <form action="{{ url_for('add_comment', post_id=post.post_id) }}" method="POST">
             <textarea name="comment" placeholder="Add a comment" rows="3" required></textarea>
-            <button type="submit">أضف تعليق</button>
+            <button class="btn btn-primary" type="submit">أضف تعليق</button>
         </form>
         {% else %}
         <div class="login-prompt">
@@ -173,19 +183,19 @@
                 <p>{{ comment.body }}</p>
         
                 {% if current_user.is_authenticated %}
-                <button class="reply-button" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
+                <button class="btn btn-primary" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
                 {% endif %}
         
                 {% if comment.author_email == current_user.get_id() %}
                 <form action="{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST" style="display:inline;">
-                    <button type="button" class="delete-button" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
                 </form>
                 {% endif %}
         
                 <div class="reply-form" id="reply-form-{{ comment.comment_id }}" style="display:none;">
                     <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST">
                         <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
-                        <button type="submit">أضف الرد</button>
+                        <button class="btn btn-primary" type="submit">أضف الرد</button>
                     </form>
                 </div>
                 {% if comment.replies %}
@@ -199,12 +209,12 @@
                         <p>{{ reply.body }}</p>
         
                         {% if current_user.is_authenticated %}
-                        <button class="reply-button" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
+                        <button class="btn btn-primary" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
                         {% endif %}
         
                         {% if reply.author_email == current_user.get_id() %}
                         <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
-                            <button type="button" class="delete-button" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
                         </form>
                         {% endif %}
         
@@ -212,13 +222,13 @@
                             <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id, parent_reply_id=reply.reply_id) }}" method="POST">
                                 <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
                                 <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
-                                <button type="submit">أضف الرد</button>
+                                <button class="btn btn-primary" type="submit">أضف الرد</button>
                             </form>
                         </div>
                     </li>
                     {% endfor %}
                 </ul>
-                <button class="show-replies-button mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
+                <button class="btn btn-primary mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
                 {% endif %}
 
             </li>
@@ -229,3 +239,4 @@
     </div>
     
     {% endblock %}
+    

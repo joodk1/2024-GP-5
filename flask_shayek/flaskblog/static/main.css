@@ -361,24 +361,8 @@ a.article-title:hover {
   background-color: #f8f9fa;
   }
 
-  .reply-button:hover {
-  background-color: #3f5e22;
-  }
-
   .reply-form {
       margin-top: 10px; 
-  }
-  .delete-button {
-  background-color:#4F792A;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  margin-top: 5px;
-  }
-  .delete-button:hover {
-  background-color: #3f5e22;
   }
   
 .like-button {
