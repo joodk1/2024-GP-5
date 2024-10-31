@@ -489,6 +489,12 @@ color: #4F792A;
   background: transparent;
 }
 
+.delete-icon-btn:focus, .delete-icon-btn:active {
+  outline: none;
+  box-shadow: none; 
+  background-color: transparent; 
+}
+
 .delete-icon-btn:hover i {
   color: var(--dark-green); 
   -webkit-text-stroke: 1.2px rgb(44, 44, 44); 

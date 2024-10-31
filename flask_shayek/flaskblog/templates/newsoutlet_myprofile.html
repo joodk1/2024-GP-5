@@ -42,13 +42,12 @@
             </div>
         </div>
     </div>
-
-    <div class="card-header">
-        <h4>المنشورات</h4>
-    </div>     
     <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
         <i class="fas fa-pen post-icon mr-2"></i> إضافة نشرة جديدة
-    </button>    
+    </button>   
+    <div class="card-header">
+        <h4>المنشورات</h4>
+    </div>      
 
     <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -82,7 +81,7 @@
             </div>
         </div>
     </div>
-       
+{% if posts %}   
     {% for post in posts %}
         {% if post.author == user_info %}
             <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
@@ -90,13 +89,16 @@
                     <div class="article-metadata text-right">
                         <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
                         <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
-                             <button type="submit" class="delete-icon-btn" onclick="return confirmDelete()">
-                                 <i class="fas fa-trash"></i>
+                            <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                                <i class="fas fa-trash"></i>
                             </button>
-                         </form>
-                         <script>
-                            function confirmDelete() {
-                                return confirm('متأكد من حذف النشرة؟');
+                        </form>
+                        <script>
+                            function confirmDelete(button) {
+                                event.stopPropagation();
+                                if (confirm('متأكد من حذف النشرة؟')) {
+                                    button.parentElement.submit();
+                                }
                             }
                         </script>
                         <small class="text-muted">{{ post.timestamp }}</small>
@@ -119,5 +121,10 @@
             </article>
         {% endif %}    
     {% endfor %}
+{% else %}
+    <div>
+        <h5>لا توجد منشورات</h5>
+    </div>
+{% endif %}
 </div>
 {% endblock %}

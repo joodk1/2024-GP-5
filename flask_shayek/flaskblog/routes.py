@@ -872,7 +872,14 @@ def delete_post(post_id):
             notifications_ref.child(notification_id).delete()
 
     flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة وجميع التنبيهات المرتبطة بها بنجاح', 'success')
-    return redirect(request.referrer)
+
+    referrer = request.referrer
+    if 'post' in referrer:
+        return redirect(url_for('home'))
+    elif 'profile' in referrer:
+        return redirect(url_for('profile', username=current_user.username))
+    
+    return redirect(url_for('home'))
 
 
 @app.route('/admin/logout')
@@ -1202,13 +1209,14 @@ def delete_notification(notification_key):
 
 @app.route('/post/<string:post_id>')
 def post(post_id):
+    username= session['user_email']
     posts = fetch_posts()  
     post = next((p for p in posts if p['post_id'] == post_id), None)  
 
     if not post:
         abort(404)  
 
-    return render_template('post.html', post=post)
+    return render_template('post.html', post=post, username=username)
 
 @app.context_processor
 def inject_notifications():

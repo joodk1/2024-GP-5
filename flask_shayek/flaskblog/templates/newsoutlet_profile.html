@@ -44,8 +44,11 @@
 
         {% if user_info == current_user.username %}
             <script>
-                function confirmDelete() {
-                    return confirm('متأكد من حذف النشرة؟');
+                function confirmDelete(button) {
+                    event.stopPropagation();
+                    if (confirm('متأكد من حذف النشرة؟')) {
+                        button.parentElement.submit();
+                    }
                 }
             </script>
         {% else %}
@@ -84,11 +87,19 @@
     <div class="card-header">
         <h4>المنشورات</h4>
     </div>
+{% if posts %}
     {% for post in posts %}
         <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
             <div class="media-body">
                 <div class="article-metadata text-right">
                     <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                    {% if user_info == current_user.username %}
+                    <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                        <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                     <small class="text-muted">{{ post.timestamp }}</small>
                 </div> 
                 <br>
@@ -104,13 +115,6 @@
                         <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                     {% endif %}
                 {% endif %}
-
-                {% if user_info == current_user.username %}
-                    <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                        {{ form.hidden_tag() }} 
-                        <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                    </form>
-                {% endif %}
                 <div class="post-comments">
                     <i class="far fa-comment"></i>
                     <span>{{ post.count }}</span>
@@ -118,6 +122,11 @@
             </div>
         </article>
     {% endfor %}
+{% else %}
+    <div>
+        <h5>لا توجد منشورات</h5>
+    </div>
+{% endif %}
 </div>
 </div>
 

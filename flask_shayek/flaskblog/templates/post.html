@@ -105,9 +105,22 @@
         <div class="media-body">
             <div class="article-metadata text-right">
                 <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                {% if post.author_email == username %}
+                <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                    <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+                <script>
+                    function confirmDelete(button) {
+                        if (confirm('متأكد من حذف النشرة؟')) {
+                            button.parentElement.submit(); 
+                        }
+                    }
+                </script>
+               {% endif %}
                 <small class="text-muted">{{ post.timestamp }}</small>
             </div> 
-
             <h3 class="article-title">{{ post.title }}</h3>
             <p class="article-content">{{ post.content }}
                 {% if post.media %}
