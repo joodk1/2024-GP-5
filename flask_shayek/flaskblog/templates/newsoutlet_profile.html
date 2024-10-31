@@ -107,7 +107,7 @@
 
                 {% if user_info == current_user.username %}
                     <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                        {{ form.hidden_tag() }} <!-- CSRF token -->
+                        {{ form.hidden_tag() }} 
                         <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
                     </form>
                 {% endif %}
@@ -118,6 +118,7 @@
             </div>
         </article>
     {% endfor %}
+</div>
 </div>
 
 <script>
@@ -150,7 +151,6 @@
             });
         });
 
-       // Unfollow News Outlet
         $('#unfollow-btn').click(function(e) {
             e.preventDefault(); 
 
@@ -221,7 +221,6 @@
             });
         });
 
-        // Disable Notifications
         $('#unnotify-btn').click(function(e) {
             e.preventDefault();
 

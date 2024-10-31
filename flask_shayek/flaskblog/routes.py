@@ -24,7 +24,8 @@ from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -33,8 +34,8 @@ firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
 # Loading the pre-trained model
-#model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
-#model = load_model(model_path)
+model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
+model = load_model(model_path)
 
 def parse_timestamp(timestamp):
      try:
@@ -134,6 +135,7 @@ def homepage():
 def about():
     return render_template('about.html', title = 'من نحن؟')
 
+
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
     frames = []
@@ -173,7 +175,7 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
     return np.array(processed_frames)
 
 @app.route('/shayekModel',methods=['GET','POST'])
-def shayekModel():  
+def shayekModel(): 
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -191,7 +193,6 @@ def shayekModel():
                 pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
                 return jsonify({'result': pred_label})
             return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
-        
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
@@ -230,37 +231,40 @@ def home():
             if newsoutlet_ref:
                 user_info = list(newsoutlet_ref.values())[0]
                 username = user_info.get('username')
-                posts = fetch_posts()
-                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username)
-            
+
+                if filter_option == 'followed':
+                    followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
+                    followed_users_emails = {user: data.get('newsoutlet_id') for user, data in followed_users_ref.items() if data.get('newsoutlet_id')} if followed_users_ref else {}
+
+                    posts = []
+                    for user_id, newsoutlet_id in followed_users_emails.items():
+                        user_posts = fetch_posts_by_user(newsoutlet_id)
+                        if user_posts:
+                            posts.extend(user_posts)
+                else:
+                    posts = fetch_posts()
+
+                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username,  filter=filter_option)
+
             else: 
                 member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
                 if member_ref:
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
-
-                    
                     if filter_option == 'followed':
                         followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
+                        followed_users_emails = {user: data.get('newsoutlet_id') for user, data in followed_users_ref.items() if data.get('newsoutlet_id')} if followed_users_ref else {}
 
-                        if followed_users_ref:
-                            
-                            followed_users_emails = {user: data.get('newsoutlet_id') for user, data in followed_users_ref.items() if data.get('newsoutlet_id')}
-                        else:
-                            followed_users_emails = {}
-
-                    
                         posts = []
                         for user_id, newsoutlet_id in followed_users_emails.items():
                             user_posts = fetch_posts_by_user(newsoutlet_id)
                             if user_posts:
                                 posts.extend(user_posts)
-
                     else:
                         posts = fetch_posts()
                     
                     return render_template('member_home.html', posts=posts, user=user_data, username=username, filter=filter_option)
-                
+
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
                     return redirect(url_for('Member_login'))        
@@ -270,6 +274,7 @@ def home():
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('Member_login'))
+
 
 @app.route('/member_login', methods=['GET', 'POST'])
 def member_login():
@@ -855,11 +860,20 @@ def delete_post(post_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
+    # Delete post
     post_ref = db.reference(f'posts/{post_id}')
     post_ref.delete()
 
-    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة بنجاح', 'success')
+    # Delete all related notifications
+    notifications_ref = db.reference('notifications')
+    related_notifications = notifications_ref.order_by_child('post_id').equal_to(post_id).get()
+    if related_notifications:
+        for notification_id in related_notifications.keys():
+            notifications_ref.child(notification_id).delete()
+
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة وجميع التنبيهات المرتبطة بها بنجاح', 'success')
     return redirect(request.referrer)
+
 
 @app.route('/admin/logout')
 @app.route('/logout')

@@ -45,8 +45,8 @@
                     <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
                     <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
                     {% if session['logged_in'] == True %}
-                        <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
                         <a class="nav-item nav-link" href="{{ url_for('home') }}" onclick="goToHome()">الرئيسية</a>
+                        <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
 
                 <!-- Notifications-->
                 <div class="nav-item dropdown" id="notificationsDropdown">
@@ -141,17 +141,20 @@
                 console.error("لم يتم العثور على الإشعار");
                 return;
             }
-    
+
             event.stopPropagation();
-    
+
             $.post('/notification/delete/' + notification_key, function(response) {
                 if (response.success) {
                     fetchNotifications();  
                 } else {
+                    fetchNotifications(); 
                     alert(response.message);
                 }
             });
         }
+
+
     
         $(document).ready(function() {
     
@@ -165,8 +168,7 @@
                         if (response.success) {
                             var notifications = response.notifications;
                             var unreadCount = response.unread_count;
-    
-                           
+
                             var notificationsList = '';
                             if (notifications.length > 0) {
                                 notifications.forEach(function(notification) {
@@ -188,18 +190,15 @@
                             } else {
                                 notificationsList = '<p class="dropdown-item">لايوجد إشعارات</p>';
                             }
-    
-                            
-                            $('.dropdown-menu').html(notificationsList);
-    
-                           
+
+                            $('#notificationsDropdown .dropdown-menu').html(notificationsList);
+
                             if (unreadCount > 0) {
                                 $('.notification-count').text(unreadCount).show();
                             } else {
                                 $('.notification-count').text(0).hide();
                             }
-    
-                            
+
                             attachNotificationClickEvents();
                         } else {
                             console.error('حدث خطأ عند محاولة عرض الإشعارات', response.message);
@@ -210,6 +209,7 @@
                     }
                 });
             }
+
     
             
             function attachNotificationClickEvents() {

@@ -1,43 +1,127 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="text-right">
-        <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
-            إضافة نشرة جديدة
-        </button>
-    </div>    
 
-    <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="postModalLabel">انشاء نشرة جديدة</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <form action="/submit_post" method="POST" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="post-title">العنوان</label>
-                            <input type="text" class="form-control" id="post-title" name="title" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="post-body">المحتوى</label>
-                            <textarea class="form-control" id="post-body" name="body" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="post-media">الوسائط</label>
-                            <input type="file" class="form-control-file" id="post-media" name="media">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">الغاء</button>
-                        <button type="submit" class="btn btn-primary">رفع</button>
-                    </div>
-                </form>
+<!-- Floating Button to Open the Modal -->
+<button class="btn btn-primary rounded-circle add-post-btn" data-toggle="modal" data-target="#postModal" aria-label="Add Post">
+    <i class="fa fa-pen"></i>
+</button>
+
+<!-- Modal Structure (your existing code) -->
+<div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="postModalLabel">انشاء نشرة جديدة</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
+            <form action="/submit_post" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="post-title">العنوان</label>
+                        <input type="text" class="form-control" id="post-title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="post-body">المحتوى</label>
+                        <textarea class="form-control" id="post-body" name="body" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="post-media">الوسائط</label>
+                        <input type="file" class="form-control-file" id="post-media" name="media">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">الغاء</button>
+                    <button type="submit" class="btn btn-primary">رفع</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
+
+    <!-- Toggle between all posts and followed users -->
+    <div class="btn-group" role="group" aria-label="Post Filter">
+        <a href="{{ url_for('home', filter='followed') }}" 
+        class="btn btn-outline-primary {% if filter == 'followed' %}active green-button{% endif %} post-filter-btn" 
+        data-filter="followed">
+         المتابعين
+     </a>
+        <a href="{{ url_for('home', filter='all') }}" 
+           class="btn btn-outline-primary {% if filter == 'all' %}active green-button{% endif %} post-filter-btn" 
+           data-filter="all">
+            الجميع
+        </a>
+    </div>
+    
+    <script>
+        const feedUrl = "{{ url_for('home', filter=filter) }}";
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.post-filter-btn');
+            let currentFilter = sessionStorage.getItem('filter');
+
+        if (!currentFilter) {
+        currentFilter = 'followed';  
+        sessionStorage.setItem('filter', currentFilter); }
+
+    
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                });
+            });
+            const scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, scrollPosition);
+            sessionStorage.removeItem('scrollPosition'); 
+        }
+        buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const selectedFilter = this.dataset.filter;
+            storeFilter(selectedFilter); });});
+
+            function storeScrollPosition() {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
+    function storeFilter(filter) {
+    sessionStorage.setItem('filter', filter);}
+    window.location.href = "{{ url_for('home', filter='') }}" + filter;});
+    
+
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    });
+
+    
+        function toggleLike(button) {
+            const postId = button.getAttribute('data-post-id');
+            const isLiked = button.querySelector('i').classList.contains('liked-heart');
+            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
+        
+            fetch(url, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (isLiked) {
+                        
+                        button.querySelector('i').classList.remove('fas', 'liked-heart');
+                        button.querySelector('i').classList.add('far');
+                    } else {
+                        
+                        button.querySelector('i').classList.remove('far');
+                        button.querySelector('i').classList.add('fas', 'liked-heart');
+                    }
+                    button.querySelector('span').textContent = data.likes;
+                } else {
+                    console.error(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>  
 
     {% for post in posts %}
     <article class="media content-section">
@@ -45,55 +129,54 @@
             <div class="article-metadata text-right">
                 {% if post.author %}
                     <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                    {% if post.author == username %}
+                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                             <button type="submit" class="delete-icon-btn" onclick="return confirmDelete()">
+                                 <i class="fas fa-trash"></i>
+                            </button>
+                         </form>
+                         <script>
+                            function confirmDelete() {
+                                return confirm('متأكد من حذف النشرة؟');
+                            }
+                        </script>
+                    {% endif %}
                 {% endif %}
                 <small class="text-muted">{{ post.timestamp }}</small>
             </div> 
             <br>
             <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
-            <h3 class="article-title">{{ post.title }}</h3>
-            <p class="article-content">{{ post.content }}
-                {% if post.media %}
-                    {% set file_ext = post.media.split('.')[-1].lower() %}
-                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video class="post-video" controls>
-                            <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                        </video>
-                    {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                <h3 class="article-title">{{ post.title }}</h3>
+                <p class="article-content">{{ post.content }}
+                    {% if post.media %}
+                        {% set file_ext = post.media.split('.')[-1].lower() %}
+                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                            <video class="post-video" controls>
+                                <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                            </video>
+                        {% else %}
+                            <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                        {% endif %}
                     {% endif %}
-                {% endif %}
-            </p>
-
-        
-    </a>
-    <div class="post-comments">
-        <a href="{{ url_for('post', post_id=post.post_id) }}" >
-        <i class="far fa-comment"></i>
-        <span>{{ post.count }}</span>
-    </a>
-        <div style="margin-left: -5px;"></div>
-        <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >
-            <i class="far fa-heart 
-                {% if current_user.get_id() in post.liked_by %} 
-                    fas liked-heart 
-                {% endif %}"></i> 
-            <span>{{ post.likes }}</span>
-        </button>
-    </div>
-        
-            
-            {% if post.author_email == user_id %}
-                <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post">
-                    <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                </form>
-                <script>
-                    function confirmDelete() {
-                        return confirm('متأكد من حذف النشرة؟');
-                    }
-                  </script>
-            {% endif %}
-        </div>
-    </article>
+                </p>
+            </a> 
+            <div class="post-comments">
+                <a href="{{ url_for('post', post_id=post.post_id) }}">
+                    <i class="far fa-comment"></i>
+                    <span>{{ post.count }}</span>
+                </a>
+                <div style="margin-left: -5px;">
+                    <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)">
+                        <i class="far fa-heart 
+                            {% if current_user.get_id() in post.liked_by %} 
+                                fas liked-heart 
+                            {% endif %}"></i> 
+                        <span>{{ post.likes }}</span>
+                    </button>
+                </div>
+            </div>
+        </div> 
+    </article>    
     <script>
         function toggleLike(button) {
             const postId = button.getAttribute('data-post-id');

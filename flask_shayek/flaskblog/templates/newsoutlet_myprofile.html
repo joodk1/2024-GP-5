@@ -47,8 +47,8 @@
         <h4>المنشورات</h4>
     </div>     
     <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
-        إضافة نشرة جديدة
-    </button>
+        <i class="fas fa-pen post-icon mr-2"></i> إضافة نشرة جديدة
+    </button>    
 
     <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -89,6 +89,16 @@
                 <div class="media-body">
                     <div class="article-metadata text-right">
                         <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                             <button type="submit" class="delete-icon-btn" onclick="return confirmDelete()">
+                                 <i class="fas fa-trash"></i>
+                            </button>
+                         </form>
+                         <script>
+                            function confirmDelete() {
+                                return confirm('متأكد من حذف النشرة؟');
+                            }
+                        </script>
                         <small class="text-muted">{{ post.timestamp }}</small>
                     </div> 
                     <br>
@@ -105,16 +115,6 @@
                             {% endif %}
                         {% endif %}
                     </p>
-                    {% if post.author == user_info %}
-                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-danger" onclick="return confirmDelete()">حذف النشرة</button>
-                        </form>
-                        <script>
-                            function confirmDelete() {
-                                return confirm('متأكد من حذف النشرة؟');
-                            }
-                        </script>
-                    {% endif %}
                 </div>
             </article>
         {% endif %}    
