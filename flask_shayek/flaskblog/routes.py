@@ -17,7 +17,7 @@ from itsdangerous import URLSafeTimedSerializer
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model # type: ignore
+from tensorflow.keras.models import load_model
 import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -38,31 +38,32 @@ model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
 model = load_model(model_path)
 
 def parse_timestamp(timestamp):
-     try:
-         return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
-     except (ValueError, TypeError):
-         return datetime(1970, 1, 1)
-    
-
+    try:
+        return datetime.strptime(timestamp, '%b %d, %Y %I:%M%p')
+    except (ValueError, TypeError):
+        return datetime(1970, 1, 1)
 
 def fetch_posts():
     posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
-    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
-    posts = []
-    
-    for post_id, post_data in reversed_posts.items():
+    posts = [(post_id, posts_snapshot[post_id]) for post_id in posts_snapshot]
+    posts.sort(key=lambda post: parse_timestamp(post[1]['timestamp']), reverse=True)
+
+    formatted_posts = []
+    for post_id, post_data in posts:
         count = 0
         comments = post_data.get('comment', {})
         formatted_comments = []   
+        
         if isinstance(comments, dict):
             for comment_id, comment_data in comments.items():
                 count += 1
                 if comment_data:
                     replies = comment_data.get('replies', {})
                     formatted_replies = []
+                    
                     if isinstance(replies, dict):
-                        sorted_replies = sorted(replies.items(), key=lambda x: datetime.strptime(x[1].get('timestamp', ''), "%b %d, %Y %I:%M%p"))
+                        sorted_replies = sorted(replies.items(), key=lambda x: parse_timestamp(x[1].get('timestamp', '')))
                         
                         for reply_id, reply in sorted_replies:
                             formatted_reply = {
@@ -77,7 +78,7 @@ def fetch_posts():
                     comment_data['replies'] = formatted_replies
                 formatted_comments.append(comment_data)
 
-        posts.append({
+        formatted_posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
@@ -91,7 +92,8 @@ def fetch_posts():
             'liked_by': post_data.get('liked_by', [])
         })
     
-    return posts
+    return formatted_posts
+
 
 posts = fetch_posts()
 
@@ -101,26 +103,30 @@ def fetch_posts_by_user(user_email):
     if not posts_snapshot:
         return []
 
-    reversed_posts = {post_id: posts_snapshot[post_id] for post_id in reversed(list(posts_snapshot.keys()))}
     posts = []
-    for post_id, post_data in reversed_posts.items():
+    for post_id, post_data in posts_snapshot.items():
         count = 0
         comments = post_data.get('comment', {})
         if isinstance(comments, dict):
             for comment_id, comment_data in comments.items():
-                count +=1
+                count += 1
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
+            'parsed_timestamp': parse_timestamp(post_data.get('timestamp')),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
             'count': count,
-            'likes': post_data.get('likes', 0),  
-            'liked_by': post_data.get('liked_by', []) })
+            'likes': post_data.get('likes', 0),
+            'liked_by': post_data.get('liked_by', [])
+        })
+    posts.sort(key=lambda x: x['parsed_timestamp'], reverse=True)
+
     return posts
+
 
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
@@ -196,7 +202,7 @@ def shayekModel():
     return render_template('shayekModel.html', title = 'نشيّك؟')
 
 @app.route('/upload_video', methods=['GET','POST'])
-def upload_video(): 
+def upload_video():
     if request.files:
         video = request.files['video']
         if video.filename != '':
@@ -1209,7 +1215,7 @@ def delete_notification(notification_key):
 
 @app.route('/post/<string:post_id>')
 def post(post_id):
-    username= session['user_email']
+    username = session.get('user_email')
     posts = fetch_posts()  
     post = next((p for p in posts if p['post_id'] == post_id), None)  
 

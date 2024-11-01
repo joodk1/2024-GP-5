@@ -488,3 +488,12 @@ color: #4F792A;
   color: var(--dark-green); 
   -webkit-text-stroke: 0; 
 }
+
+#notificationsDropdown .fa-bell {
+  transition: none;
+  transform: none !important;
+}
+
+#notificationsDropdown .fa-bell:hover {
+  color: var(--light-green);
+}
