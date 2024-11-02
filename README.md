@@ -7,8 +7,8 @@ The goal behind Shayek is to provide a single platform that brings reliable news
 <br> and to provide a video deepfake detection model that can limit the spread of misinformation.
 
 ## Technology
-The website is developed using Flask, a Python web framework, for the back-end and HTML and CSS for the front-end.
-<br>The model is built using Convolutional Neural Networks (CNN) with ResNet50 architecture.
+The website is developed using Flask, a Python web framework, for the back-end, with HTML, CSS, JavaScript, and AJAX handling the front-end.
+<br>The models are built using Convolutional Neural Networks (CNN) with ResNet50 architecture.
 ### Tools: 
 <ul>
   <li>Visual Studio Code</li>
@@ -25,15 +25,16 @@ Click on the "Code" button and select "Download ZIP" to download the entire repo
     <li>
         <strong>Create a virtual environment:</strong>
         Open a terminal or command prompt, make sure you're in the root directory of the project, then run the following commands to create and activate a virtual environment: <code>python -m venv venv</code>
-On Windows: <code>venv\Scripts\activate</code>
-On macOS and Linux: <code>source venv/bin/activate</code>
+        <br>On Windows: <code>venv\Scripts\activate</code>
+        <br>On macOS and Linux: <code>source venv/bin/activate</code>
     </li>
     <li>
-        <strong>Install any dependencies required</strong>
+        <strong>Install any dependencies required:</strong>
+        You can do that by installing the requirements.txt file: <code>pip install -r requirements.txt</code>
     </li>
     <li>
         <strong>Run the flask application:</strong>
-Run the following command to start the Flask development server <code>python run.py</code>
+        Run the following command to start the Flask development server <code>python run.py</code>
     </li>
     <li>
         <strong>Access the application:</strong>
