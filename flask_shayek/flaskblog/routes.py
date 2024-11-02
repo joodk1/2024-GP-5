@@ -24,7 +24,7 @@ from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
@@ -253,7 +253,7 @@ def home():
                 return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username,  filter=filter_option)
 
             else: 
-                member_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+                member_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
                 if member_ref:
                     user_info = list(member_ref.values())[0]
                     username = user_info.get('username')
@@ -300,7 +300,7 @@ def member_login():
             user_email = user_info['email']
             user_id = user_info['localId']
 
-            user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+            user_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
 
             if user_ref:
                 user_data = list(user_ref.values())[0]
@@ -398,7 +398,7 @@ def profile():
     user_type = 'newsoutlet' if user_ref else 'member'
 
     if user_type == 'member':
-        user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+        user_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
         if not user_ref:
             flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
             return redirect(url_for('member_login'))
@@ -434,7 +434,7 @@ def profile():
                     if isinstance(follower, dict):
                         member_email = follower.get('member_id')
                         if member_email:
-                            result = db.reference('users').order_by_child('email').equal_to(member_email).get()
+                            result = db.reference('members').order_by_child('email').equal_to(member_email).get()
                             if not result:
                                 result = db.reference('newsoutlet').order_by_child('email').equal_to(member_email).get()
 
@@ -491,7 +491,7 @@ def user_profile(username):
                             continue
 
                         
-                        result = db.reference('users').order_by_child('email').equal_to(member_email).get()
+                        result = db.reference('members').order_by_child('email').equal_to(member_email).get()
                         if not result:
                             result = db.reference('newsoutlet').order_by_child('email').equal_to(member_email).get()
 
@@ -543,7 +543,7 @@ def user_profile(username):
                     is_getting_notifications=is_getting_notifications
                 )
 
-    member_ref = firebase_database.child('users')
+    member_ref = firebase_database.child('members')
     member_data = member_ref.get()
 
     if member_data:
@@ -580,7 +580,7 @@ def user_profile(username):
 
 
 def determine_user_role(email):
-    users_ref = db.reference('users')
+    users_ref = db.reference('members')
     users_query_result = users_ref.order_by_child('email').equal_to(email).get()
     if users_query_result:
         return 'user'
@@ -613,7 +613,7 @@ def member_register():
                 'is_newsoutlet': False 
             }
             
-            db.reference(f'users/{user.uid}').set(user_data)
+            db.reference(f'members/{user.uid}').set(user_data)
             
             flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم تسجيل الحساب بنجاح', 'success')
             return redirect(url_for('member_login'))
@@ -660,7 +660,7 @@ def load_user(email):
             if password_hash:
                 return User(email=email, password_hash=password_hash, **user_data)
 
-    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
+    user_ref = db.reference('members').order_by_child('email').equal_to(email).get()
     
     if user_ref:
         user_data = next(iter(user_ref.values()), None)
@@ -751,7 +751,7 @@ def verify_request(request_id):
         return redirect(url_for('member_login'))
 
 def fetch_username_from_database(email):
-    user_ref = db.reference('users').order_by_child('email').equal_to(email).get()
+    user_ref = db.reference('members').order_by_child('email').equal_to(email).get()
     if user_ref:
         user_data = next(iter(user_ref.values()))
         return user_data.get('username', None)
@@ -995,7 +995,7 @@ def follow_newsoutlet(username):
                 continue
 
             
-            user_data = firebase_database.child('users').order_by_child('email').equal_to(member_email).get()
+            user_data = firebase_database.child('members').order_by_child('email').equal_to(member_email).get()
             if user_data:
                 user_key, user_info = list(user_data.items())[0]
                 follower_usernames.add(user_info.get('username'))
@@ -1048,7 +1048,7 @@ def unfollow_newsoutlet(username):
         follower_usernames = []
         for follow in current_followers:
             follower_email = follow.get('member_id')
-            member_data = firebase_database.child('users').order_by_child('email').equal_to(follower_email).get()
+            member_data = firebase_database.child('members').order_by_child('email').equal_to(follower_email).get()
             if member_data:
                 member_key, member_info = list(member_data.items())[0]
                 follower_usernames.append(member_info.get('username'))
@@ -1243,7 +1243,7 @@ def add_comment(post_id):
         flash('الوصول غير مصرح به', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+    user_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
 
     if not user_ref:
         user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
@@ -1282,7 +1282,7 @@ def reply_comment(post_id, comment_id, parent_reply_id):
         flash('الوصول غير مصرح به', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    user_ref = db.reference('users').order_by_child('email').equal_to(user_email).get()
+    user_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
     if not user_ref:
         user_ref = db.reference('newsoutlet').order_by_child('email').equal_to(user_email).get()
 
