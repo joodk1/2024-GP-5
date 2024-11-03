@@ -373,31 +373,69 @@ a.article-title:hover {
     display: flex;
     align-items: center;
     font-size: 16px;
-    color: var(--dark-green);;  
+    color: var(--dark-green); 
 }
 
 .like-button:hover {
   background-color: transparent; 
 }
-  
+
+.like-button:hover .fas,
+.like-button:hover .far {
+    color:var(--dark-green); 
+}
+
+.like-button:hover .far:before {
+    content: "\f004"; 
+    font-weight: 900; 
+}
+
 .fas {
 color: red ; 
 }
+
 
 .like-button span {
   margin-left: 6px; 
 }
 
+.comment-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: var(--dark-green);  
+}
+
+.comment-button:hover {
+  background-color: transparent; 
+}
+
+.comment-button:hover .far,
+.comment-button:hover .fa-comment {
+    color: var(--dark-green); 
+}
+
+.comment-button:hover .far:before,
+.comment-button:hover .fa-comment:before {
+    content: "\f075"; 
+    font-weight: 900;
+}
+
 .post-comments {
   display: flex;
   align-items: center; 
-  gap: 5px; 
+  gap: 6px; 
   color: var(--dark-green);
 }
 
-.post-comments span {
-  margin-right: 10px; 
+.comment-button span {
+  margin-left: 6px; 
 }
+
 
 .unread-notification {
   background-color: #ffffcc;

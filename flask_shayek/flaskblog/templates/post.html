@@ -152,11 +152,12 @@
                     {% endif %}
                 {% endif %}
             </p>
-            <div class="post-comments">
-                <button class="like-button" onclick="focusCommentForm()">
-                    <i class="far fa-comment"></i> 
+            <div class="post-comments" >
+                <button class="comment-button" onclick="focusCommentForm()">
+                    <i class="far fa-comment"></i>
                     <span>{{ post.count }}</span>
                 </button>
+                <div style="margin-left: 5px;"></div>
                 <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)">
                     <i class="far fa-heart 
                         {% if current_user.get_id() in post.liked_by %} 

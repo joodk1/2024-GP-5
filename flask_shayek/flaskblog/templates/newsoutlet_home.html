@@ -161,12 +161,13 @@
                     {% endif %}
                 </p>
             </a> 
+
             <div class="post-comments">
-                <a href="{{ url_for('post', post_id=post.post_id) }}">
+                <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
                     <i class="far fa-comment"></i>
-                    <span>{{ post.count }}</span>
-                </a>
-                <div style="margin-left: -5px;">
+                    <span>{{ post.count }}</span> </button>
+
+                <div style="margin-left: 5px;"></div>
                     <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)">
                         <i class="far fa-heart 
                             {% if current_user.get_id() in post.liked_by %} 
@@ -174,7 +175,6 @@
                             {% endif %}"></i> 
                         <span>{{ post.likes }}</span>
                     </button>
-                </div>
             </div>
         </div> 
     </article>    

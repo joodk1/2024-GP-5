@@ -119,11 +119,11 @@
             </p>
             
                 <div class="post-comments">
-                    <a href="{{ url_for('post', post_id=post.post_id) }}" >
-                    <i class="far fa-comment"></i>
-                    <span>{{ post.count }}</span>
-                </a>
-                    <div style="margin-left: -5px;"></div>
+                    <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                        <i class="far fa-comment"></i>
+                        <span>{{ post.count }}</span> </button>
+                
+                    <div style="margin-left: 5px;"></div>
                     <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)" >
                         <i class="far fa-heart 
                             {% if current_user.get_id() in post.liked_by %} 
