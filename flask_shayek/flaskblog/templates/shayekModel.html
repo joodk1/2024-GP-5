@@ -12,29 +12,42 @@
                     <div class="disclaimer">
                         <p>يرجى التأكد من التالي قبل رفع الفيديو: <br> 
                             <ul style="direction: rtl; text-align: right;">
-                                <li>يجب أن يكون الفيديو بصيغة .mp4</li>
-                                <li>سيتم التحقق من من المقاطع المعدلة باستخدام طريقة الـ Deepfake فقط</li>
+                                <li>يجب أن يكون الفيديو بصيغة mp4</li>
                                 <li>يجب ألا تقل مدة الفيديو عن ٤ ثواني</li>
+                                <li>سيتم التحقق من من المقاطع المعدلة باستخدام تقنية الـ Deepfake فقط</li>
                             </ul>
                         </p>
                         <hr>
                     </div>        
                     <h3 class="text-center">رفع الفيديو</h3>
-                    <br>
                     <div class="containerModel">
                         <form id="videoForm" action="/shayekModel" method="post" enctype="multipart/form-data">
-                            <input type="file" name="video" accept="video/*" required style="padding-left: 6px;">
-                            <br>
-                            <br>
-                            <button type="submit" class="btn btn-primary">تحقق من الفيديو</button>
+                            <label class="custom-file-upload">
+                                <input type="file" name="video" accept="video/*" required onchange="showFileName()">
+                                اختيار ملف
+                            </label>
+                            <span id="fileName"></span>
+                            <br><br>
+                            <button type="submit" class="btn btn-primary model-btn">تحقق من الفيديو</button>
                         </form>
                         <div class="loader" style="display: none;"></div>
                         <div id="result"></div>
                     </div>        
                     <span id="result" style="margin-left: 2px;"></span>
+
                     <script>
+                        function showFileName() {
+                            var fileInput = document.querySelector('input[type="file"]');
+                            var fileName = fileInput.files[0] ? fileInput.files[0].name : '';
+                            document.getElementById('fileName').innerText = fileName;
+                        }
+
                         document.getElementById('videoForm').addEventListener('submit', function(event) {
                             event.preventDefault();
+                            
+                            // Clear previous result and file name
+                            document.getElementById('result').innerText = '';
+                            
                             var formData = new FormData(this);
                             
                             document.querySelector('.loader').style.display = 'block';
@@ -62,7 +75,7 @@
                             };
                             xhr.send(formData);
                         });
-                    </script>
+                    </script>                    
                 </div>
             </div>
         </div>

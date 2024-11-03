@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-    <!-- Toggle between all posts and followed users -->
+    <!-- Toggle between all posts and posts by followed users -->
     <div class="btn-group" role="group" aria-label="Post Filter">
         <a href="{{ url_for('home', filter='followed') }}" 
         class="btn btn-outline-primary {% if filter == 'followed' %}active green-button{% endif %} post-filter-btn" 
@@ -82,42 +82,38 @@
             })
             .catch(error => console.error('Error:', error));
         }
-    </script>  
+    </script>
     
-    {% for post in posts %}
-    <article class="media content-section">
-        <div class="media-body">
-            <div class="article-metadata text-right">
-                {% if post.author %}
-                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                {% endif %}
-                <small class="text-muted">{{ post.timestamp }}</small>
-            </div> 
-            <br>
-    
-            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
-                <h3 class="article-title">{{ post.title }}</h3>
-                    <p class="article-content">{{ post.content }}</p>
-                    
-                    {% if post.media %}
-                        {% set file_ext = post.media.split('.')[-1].lower() %}
-                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                            <video class="post-video" controls>
-                                <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                            </video>
-                        {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                        {% endif %}
+    {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}
+        <article class="media content-section">
+            <div class="media-body">
+                <div class="article-metadata text-right">
+                    {% if post.author %}
+                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
                     {% endif %}
-                </p>
+                    <small class="text-muted">{{ post.timestamp }}</small>
+                </div> 
+                <br>     
+                <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
+                    <h3 class="article-title">{{ post.title }}</h3>
+                    <p class="article-content">{{ post.content }}
+                        {% if post.media %}
+                            {% set file_ext = post.media.split('.')[-1].lower() %}
+                            {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                                <video class="post-video" controls style="float: right; max-width: 200px; margin-left: 15px;">
+                                    <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                                </video>
+                            {% else %}
+                                <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                            {% endif %}
+                        {% endif %}
+                    </p>
                 </a>
-
-        
                 <div class="post-comments">
                     <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                    <i class="far fa-comment"></i>
-                    <span>{{ post.count }}</span> </button>
-                
+                        <i class="far fa-comment"></i>
+                        <span>{{ post.count }}</span> </button>
+                    
                     <div style="margin-left: 5px;"></div>
                     <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >
                         <i class="far fa-heart 
@@ -127,11 +123,7 @@
                         <span>{{ post.likes }}</span>
                     </button>
                 </div>
-       
-        </div>
-    </article>
-
-    
+            </div>
+        </article>
     {% endfor %}
-
 {% endblock %}

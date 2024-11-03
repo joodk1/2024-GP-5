@@ -11,16 +11,12 @@
                        تسجيل حساب كصحيفة
                     </a>
                     <a href="{{ url_for('member_register') }}" 
-                    class="btn btn-outline-primary white-button post-filter-btn {% if filter == 'member' or not filter %}active green-button{% endif %}" 
-                       data-filter="member">
+                        class="btn btn-outline-primary white-button post-filter-btn {% if filter == 'member' or not filter %}active green-button{% endif %}" 
+                        data-filter="member">
                        تسجيل حساب كعضو
                     </a>
-                </div>
-                
-          
-            <br><br>
-          
-          </div>
+                </div><br><br>
+            </div>
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4"> !تسجيل حساب جديد</legend>
                 <div class="form-group">
@@ -77,27 +73,21 @@
                     {% endif %}
                 </div>              
             </fieldset>
-
             <div class="z">
                 {{ form.submit(class="btn btn-outline-info white-button post-filter-btn") }}
             </div>
-            
         </form>
     </div>
     <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const buttons = document.querySelectorAll('.post-filter-btn');
-
-
-    buttons.forEach(button => {
-        button.addEventListener('click', function (event) {
-            buttons.forEach(btn => btn.classList.remove('green-button'));
-            this.classList.add('green-button');
-            sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.post-filter-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                    sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
+                });
+            });
         });
-    });
-});
-
     </script>
-    
 {% endblock content %}

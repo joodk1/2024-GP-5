@@ -7,7 +7,7 @@
 } 
 
 body {
-  font-family: 'Droid Arabic Kufi', serif;
+  font-family: 'Droid Arabic Kufi', sans-serif;
   background: #fafafa;
   color: #333333;
   margin-top: 5rem;
@@ -40,9 +40,10 @@ p {
   display: inline-block; 
   min-width: 100px; 
 }
-  .site-header .navbar-nav .nav-link:hover, a:hover {
-    color: var(--light-green);
-  }
+
+.site-header .navbar-nav .nav-link:hover, a:hover {
+  color: var(--light-green);
+}
   
 .content-section {
   background: white;
@@ -110,7 +111,6 @@ a.article-title:hover {
   color: white;
 }
 
-
 .flash-message {
   background-color: #ffffcc; 
   border: 1px solid #cccccc; 
@@ -160,6 +160,7 @@ a.article-title:hover {
   height: 50px;
   animation: spin 2s linear infinite;
   align-items: center;
+  margin-top: 15px;
 }
 
 @keyframes spin {
@@ -169,7 +170,6 @@ a.article-title:hover {
 
 #result {
   font-weight: bold;
-  font-style: italic;
   color: var(--dark-green);
   background-color: white;
   border-radius: 5px;
@@ -266,114 +266,126 @@ a.article-title:hover {
 
 .comment, .reply {
   margin-right: 20px;
-  }
-  .login-prompt {
-      background-color: #f8f9fa;
-      padding: 10px;
-      margin-top: 20px;
-      border: 1px solid #e9ecef;
-      border-radius: 10px;
-      font-size: 14px;
-  }
-  .login-prompt a {
-      color: #007bff;
-      text-decoration: none;
-  }
-  .login-prompt a:hover {
-      text-decoration: underline;
-  }
-  form {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-  }
-  textarea {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-      resize: vertical;
-  }
-  button {
-      padding: 10px 15px;
-      background-color: #4F792A;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      align-self: flex-start;
-  }
-  button:hover {
-      background-color: #3f5e22;
-  }
+}
+
+.login-prompt {
+  background-color: #f8f9fa;
+  padding: 10px;
+  margin-top: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.login-prompt a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.login-prompt a:hover {
+  text-decoration: underline;
+}
+
+form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  resize: vertical;
+}
+
+button {
+  padding: 10px 15px;
+  background-color: #4F792A;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  align-self: flex-start;
+}
+
+button:hover {
+  background-color: #3f5e22;
+}
  
-  .reply {
-      margin-left: 40px;
-  }
-  .comment-section {
+.reply {
+  margin-left: 40px;
+}
+
+.comment-section {
   margin-top: 30px;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
+}
 
-  .comment-list, .reply-list {
+.comment-list, .reply-list {
   list-style: none;
   padding: 0;
-  }
+}
 
-  .comment-header {
+.comment-header {
   display: flex;
   align-items: center;
-  }
-  .comment-actions {
+}
+
+.comment-actions {
   display: flex;
   justify-content: space-between;
   margin-top: 10px
-  }
-  .comment-section {
+}
+
+.comment-section {
   margin-top: 30px;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
+}
 
-  .comment-header, .reply-header {
-      justify-content: space-between;
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-  }
-  .comment p, .reply p {
+.comment-header, .reply-header {
+  justify-content: space-between;
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+  
+.comment p, .reply p {
   margin-top: 5px;
   font-size: 16px;
-  }
-  .comment, .reply {
+}
+
+.comment, .reply {
   border: 1px solid #ddd;
   border-radius: 10px;
   padding: 10px;
   margin-top: 10px;
   background-color: #f8f9fa;
-  }
+}
 
-  .reply-form {
-      margin-top: 10px; 
-  }
+.reply-form {
+  margin-top: 10px; 
+}
   
 .like-button {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    font-size: 16px;
-    color: var(--dark-green); 
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: var(--dark-green); 
 }
 
 .like-button:hover {
@@ -382,18 +394,17 @@ a.article-title:hover {
 
 .like-button:hover .fas,
 .like-button:hover .far {
-    color:var(--dark-green); 
+  color:var(--dark-green); 
 }
 
 .like-button:hover .far:before {
-    content: "\f004"; 
-    font-weight: 900; 
+  content: "\f004"; 
+  font-weight: 900; 
 }
 
 .fas {
 color: red ; 
 }
-
 
 .like-button span {
   margin-left: 6px; 
@@ -440,7 +451,6 @@ color: red ;
 .unread-notification {
   background-color: #ffffcc;
 }
-
 
 .notification-item {
   display: flex;
@@ -534,4 +544,50 @@ color: #4F792A;
 
 #notificationsDropdown .fa-bell:hover {
   color: var(--light-green);
+}
+
+.custom-file-upload {
+  display: inline-block;
+  padding: 6px 12px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  border: none;
+  text-align: center;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+#fileName {
+  display: inline-block;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.model-btn {
+  width: 200px;
+}
+
+.card-header{
+  padding-top: 20px;
+}
+
+#follow-btn, #unfollow-btn, #notify-btn, #unnotify-btn {
+  margin-right: 20px;
+}
+
+#follow-btn, #notify-btn, #unnotify-btn {
+  margin-bottom: 20px;
+}
+
+.card-body #no-posts{
+  text-align: center;
+  align-items: center;
+  background: white;
 }

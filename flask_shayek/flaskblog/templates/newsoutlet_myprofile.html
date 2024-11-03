@@ -15,7 +15,7 @@
                     id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" 
                     aria-expanded="false" style="cursor: pointer; margin: 0;">
                     <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
-                    عدد المتابعين: {{ followers|length }}
+                    قائمة المتابعين: {{ followers|length }}
                 </h5>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% for follower in followers %}
@@ -32,7 +32,7 @@
                     id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" 
                     aria-expanded="false" style="cursor: pointer; margin: 0;">
                     <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
-                    عدد المنصات المتابعة: {{ followed_news_outlets|length }}
+                    قائمة المنصات المتابعة: {{ followed_news_outlets|length }}
                 </h5>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {% for outlet in followed_news_outlets %}
@@ -42,12 +42,10 @@
             </div>
         </div>
     </div>
+
     <button type="button" class="btn btn-primary my-4" data-toggle="modal" data-target="#postModal">
         <i class="fas fa-pen post-icon mr-2"></i> إضافة نشرة جديدة
-    </button>   
-    <div class="card-header">
-        <h4>المنشورات</h4>
-    </div>      
+    </button>       
 
     <div class="modal fade" id="postModal" tabindex="-1" role="dialog" aria-labelledby="postModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -81,104 +79,114 @@
             </div>
         </div>
     </div>
-{% if posts %}   
-    {% for post in posts %}
-        {% if post.author == user_info %}
-            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
-                <div class="media-body">
-                    <div class="article-metadata text-right">
-                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
-                            <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                        <script>
-                            function confirmDelete(button) {
-                                event.stopPropagation();
-                                if (confirm('متأكد من حذف النشرة؟')) {
-                                    button.parentElement.submit();
+    
+    {% if posts %}
+        <div class="card mb-4 card-header">
+            <h4>المنشورات</h4>
+        </div>
+        <div class="mb-1"></div>
+        {% for post in posts %}
+            {% if post.author == user_info %}
+                <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+                    <div class="media-body">
+                        <div class="article-metadata text-right">
+                            <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                            <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                                <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            <script>
+                                function confirmDelete(button) {
+                                    event.stopPropagation();
+                                    if (confirm('متأكد من حذف النشرة؟')) {
+                                        button.parentElement.submit();
+                                    }
                                 }
-                            }
-                        </script>
-                        <small class="text-muted">{{ post.timestamp }}</small>
-                    </div> 
-                    <br>
-                    <h3 class="article-title">{{ post.title }}</h3>
-                    <p class="article-content">{{ post.content }}
-                        {% if post.media %}
-                            {% set file_ext = post.media.split('.')[-1].lower() %}
-                            {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                                <video class="post-video" controls>
-                                    <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                                </video>
-                            {% else %}
-                                <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                            </script>
+                            <small class="text-muted">{{ post.timestamp }}</small>
+                        </div> 
+                        <br>
+                        <h3 class="article-title">{{ post.title }}</h3>
+                        <p class="article-content">{{ post.content }}
+                            {% if post.media %}
+                                {% set file_ext = post.media.split('.')[-1].lower() %}
+                                {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                                    <video class="post-video" controls>
+                                        <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                                    </video>
+                                {% else %}
+                                    <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                    </p>
+                        </p>
 
-                     <div class="post-comments">
-                        <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                            <i class="far fa-comment"></i>
-                            <span>{{ post.count }}</span> </button>
-                    
-                        <div style="margin-left: 5px;"></div>
-                        <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
-                            <i class="far fa-heart 
-                                {% if current_user.get_id() in post.liked_by %} 
-                                    fas liked-heart 
-                                {% endif %}"></i> 
-                            <span>{{ post.likes }}</span>
-                        </button>
+                        <div class="post-comments">
+                            <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                                <i class="far fa-comment"></i>
+                                <span>{{ post.count }}</span> </button>
+                        
+                            <div style="margin-left: 5px;"></div>
+                            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                                <i class="far fa-heart 
+                                    {% if current_user.get_id() in post.liked_by %} 
+                                        fas liked-heart 
+                                    {% endif %}"></i> 
+                                <span>{{ post.likes }}</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </article>
-        {% endif %}    
-    {% endfor %}
-    <script>
-        function toggleLike(button) {
-            const postId = button.getAttribute('data-post-id');
-            const isLiked = button.querySelector('i').classList.contains('liked-heart');
-            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-        
-            fetch(url, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (isLiked) {
-                        
-                        button.querySelector('i').classList.remove('fas', 'liked-heart');
-                        button.querySelector('i').classList.add('far');
+                </article>
+            {% endif %}    
+        {% endfor %}
+        <script>
+            function toggleLike(button) {
+                const postId = button.getAttribute('data-post-id');
+                const isLiked = button.querySelector('i').classList.contains('liked-heart');
+                const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
+            
+                fetch(url, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (isLiked) {
+                            
+                            button.querySelector('i').classList.remove('fas', 'liked-heart');
+                            button.querySelector('i').classList.add('far');
+                        } else {
+                            
+                            button.querySelector('i').classList.remove('far');
+                            button.querySelector('i').classList.add('fas', 'liked-heart');
+                        }
+                        button.querySelector('span').textContent = data.likes;
                     } else {
-                        
-                        button.querySelector('i').classList.remove('far');
-                        button.querySelector('i').classList.add('fas', 'liked-heart');
+                        console.error(data.message);
                     }
-                    button.querySelector('span').textContent = data.likes;
-                } else {
-                    console.error(data.message);
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-        document.addEventListener("DOMContentLoaded", function () {
-        const scrollPosition = sessionStorage.getItem("scrollPosition");
-        if (scrollPosition) {
-            window.scrollTo(0, parseInt(scrollPosition));
-            sessionStorage.removeItem("scrollPosition");
-        }
-        window.addEventListener("beforeunload", function () {
-            sessionStorage.setItem("scrollPosition", window.scrollY);
+                })
+                .catch(error => console.error('Error:', error));
+            }
+            document.addEventListener("DOMContentLoaded", function () {
+            const scrollPosition = sessionStorage.getItem("scrollPosition");
+            if (scrollPosition) {
+                window.scrollTo(0, parseInt(scrollPosition));
+                sessionStorage.removeItem("scrollPosition");
+            }
+            window.addEventListener("beforeunload", function () {
+                sessionStorage.setItem("scrollPosition", window.scrollY);
+            });
         });
-    });
-    </script>
-{% else %}
-    <div>
-        <h5>لا توجد منشورات</h5>
+        </script>
+    {% else %}
+    <div class="card mb-4 ">
+        <div class="card-header">
+            <h4>المنشورات</h4>
+        </div>    
+        <div class="card-body">
+            <h5>لا توجد منشورات</h5>
+        </div>
     </div>
-{% endif %}
+    {% endif %}
 </div>
 {% endblock %}

@@ -14,7 +14,7 @@
                     id="followersDropdown" data-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false" style="cursor: pointer; margin: 0;">
                     <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
-                    <span id="follower-count">{{ followers|length }}</span> : قائمة المتابعين
+                    <span id="follower-count">{{ followers|length }} </span> :قائمة المتابعين
                 </h5>
                 <div class="dropdown-menu" aria-labelledby="followersDropdown" id="followersDropdownMenu">
                     {% for follower in followers %}
@@ -24,24 +24,7 @@
                 </div>
             </div>            
             <br><br>
-            {% if followed_news_outlets %}
-                <div class="dropdown float-right">
-                    <h5 class="card-title d-flex align-items-center dropdown-toggle" 
-                        id="followedOutletsDropdown" data-toggle="dropdown" aria-haspopup="true" 
-                        aria-expanded="false" style="cursor: pointer; margin: 0;">
-                        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
-                        المنصات المتابَعة: {{ followed_news_outlets|length }}
-                    </h5>
-                    <div class="dropdown-menu" aria-labelledby="followedOutletsDropdown">
-                        {% for outlet in followed_news_outlets %}
-                            <a class="dropdown-item custom-color" 
-                               href="{{ url_for('user_profile', username=outlet) }}">{{ outlet }}</a>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
         </div>
-
         {% if user_info == current_user.username %}
             <script>
                 function confirmDelete(button) {
@@ -54,93 +37,98 @@
             </script>
         {% else %}
             {% if current_user.is_authenticated %}
-            <div class="text-right">
-                <div id="follow-buttons">
-                    {% if is_following %}
-                        <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
-                        <button id="follow-btn" class="btn btn-primary" style="display: none;">متابعة</button>
-                    {% else %}
-                        <button id="follow-btn" class="btn btn-primary">متابعة</button>
-                        <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
-                    {% endif %}
-                </div>
-                    
-                <div id="notification-buttons">
-                    {% if is_following %}
-                        <!-- Show bell notification buttons only if the user is following the news outlet -->
-                        {% if is_getting_notifications %}
-                            <button id="unnotify-btn" class="btn btn-danger">🔕 إلغاء الإشعارات</button>
-                            <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
+                <div class="text-right">
+                    <div id="follow-buttons">
+                        {% if is_following %}
+                            <button id="unfollow-btn" class="btn btn-danger">إلغاء متابعة</button>
+                            <button id="follow-btn" class="btn btn-primary" style="display: none;">متابعة</button>
                         {% else %}
-                            <button id="notify-btn" class="btn btn-secondary">🔔 متابعة الإشعارات</button>
+                            <button id="follow-btn" class="btn btn-primary">متابعة</button>
+                            <button id="unfollow-btn" class="btn btn-danger" style="display: none;">إلغاء متابعة</button>
+                        {% endif %}
+                    </div>
+                        
+                    <div id="notification-buttons">
+                        {% if is_following %}
+                            <!-- Show bell notification buttons only if the user is following the news outlet -->
+                            {% if is_getting_notifications %}
+                                <button id="unnotify-btn" class="btn btn-danger">🔕 إلغاء الإشعارات</button>
+                                <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
+                            {% else %}
+                                <button id="notify-btn" class="btn btn-secondary">🔔 متابعة الإشعارات</button>
+                                <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
+                            {% endif %}
+                        {% else %}
+                            <!-- Hide notification buttons if not following -->
+                            <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
                             <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
                         {% endif %}
-                    {% else %}
-                        <!-- Hide notification buttons if not following -->
-                        <button id="notify-btn" class="btn btn-secondary" style="display: none;">🔔 متابعة الإشعارات</button>
-                        <button id="unnotify-btn" class="btn btn-danger" style="display: none;">🔕 إلغاء الإشعارات</button>
-                    {% endif %}
-                </div>                            
+                    </div>                            
+                </div>
             {% endif %}
         {% endif %}
     </div>
 
-    <div class="card-header">
-        <h4>المنشورات</h4>
-    </div>
-{% if posts %}
-    {% for post in posts %}
-        <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
-            <div class="media-body">
-                <div class="article-metadata text-right">
-                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                    {% if user_info == current_user.username %}
-                    <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
-                        <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
-                            <i class="fas fa-trash"></i>
+    {% if posts %}
+        <div class="card mb-4 card-header">
+            <h4>المنشورات</h4>
+        </div>
+        <div class="mb-1"></div>
+        {% for post in posts %}
+            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+                <div class="media-body">
+                    <div class="article-metadata text-right">
+                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                        {% if user_info == current_user.username %}
+                        <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                            <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <small class="text-muted">{{ post.timestamp }}</small>
+                    </div> 
+                    <br>
+                    <h3 class="article-title">{{ post.title }}</h3>
+                    <p class="article-content">{{ post.content }}
+                        {% if post.media %}
+                            {% set file_ext = post.media.split('.')[-1].lower() %}
+                            {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                                <video class="post-video" controls>
+                                    <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                                </video>
+                            {% else %}
+                                <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                    <div class="post-comments">
+                        <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                            <i class="far fa-comment"></i>
+                            <span>{{ post.count }}</span> </button>
+                    
+                        <div style="margin-left: 5px;"></div>
+                        <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)" >
+                            <i class="far fa-heart 
+                                {% if current_user.get_id() in post.liked_by %} 
+                                    fas liked-heart 
+                                {% endif %}"></i> 
+                            <span>{{ post.likes }}</span>
                         </button>
-                    </form>
-                    {% endif %}
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
-                <br>
-                <h3 class="article-title">{{ post.title }}</h3>
-                <p class="article-content">{{ post.content }}
-                {% if post.media %}
-                    {% set file_ext = post.media.split('.')[-1].lower() %}
-                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video class="post-video" controls>
-                            <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                        </video>
-                    {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                    {% endif %}
-                {% endif %}
-            </p>
-            
-                <div class="post-comments">
-                    <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                        <i class="far fa-comment"></i>
-                        <span>{{ post.count }}</span> </button>
-                
-                    <div style="margin-left: 5px;"></div>
-                    <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)" >
-                        <i class="far fa-heart 
-                            {% if current_user.get_id() in post.liked_by %} 
-                                fas liked-heart 
-                            {% endif %}"></i> 
-                        <span>{{ post.likes }}</span>
-                    </button>
+                    </div>
                 </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <div class="card mb-4 ">
+            <div class="card-header">
+                <h4>المنشورات</h4>
+            </div>    
+            <div class="card-body">
+                <h5>لا توجد منشورات</h5>
             </div>
-        </article>
-    {% endfor %}
-{% else %}
-    <div>
-        <h5>لا توجد منشورات</h5>
-    </div>
-{% endif %}
-</div>
+        </div>
+    {% endif %}
 </div>
 
 <script>
@@ -306,7 +294,4 @@
         });
     });
 </script>
-
-
-
 {% endblock %}

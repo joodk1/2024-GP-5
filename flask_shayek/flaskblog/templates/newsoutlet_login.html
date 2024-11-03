@@ -15,10 +15,7 @@
                        data-filter="memberlog">
                        تسجيل دخول كعضو
                     </a>
-                </div>
-                <br><br>
-              
-
+                </div><br><br>
             </div>
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4">!مرحبًا مجددًا شريك منصة شيّـــك</legend>
@@ -56,31 +53,28 @@
                 {{ form.submit(class="btn btn-outline-info white-button post-filter-btn") }}
                 <br>
                 <a class="nav-item nav-link mt-2" href="{{ url_for('reset_password_request') }}">نسيت كلمة المرور؟</a>
-                
             </div>
-            
         </form>
     </div>
 
-    
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-        const buttons = document.querySelectorAll('.post-filter-btn');
-        const savedFilter = sessionStorage.getItem('selectedRegistrationOption');
-        if (savedFilter) {
-            buttons.forEach(btn => {
-                if (btn.getAttribute('data-filter') === savedFilter) {
-                    btn.classList.add('green-button');
-                }
-            });
-        }
-        buttons.forEach(button => {
-            button.addEventListener('click', function (event) {
-                buttons.forEach(btn => btn.classList.remove('green-button'));
-                this.classList.add('green-button');
-                sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
+            const buttons = document.querySelectorAll('.post-filter-btn');
+            const savedFilter = sessionStorage.getItem('selectedRegistrationOption');
+            if (savedFilter) {
+                buttons.forEach(btn => {
+                    if (btn.getAttribute('data-filter') === savedFilter) {
+                        btn.classList.add('green-button');
+                    }
+                });
+            }
+            buttons.forEach(button => {
+                button.addEventListener('click', function (event) {
+                    buttons.forEach(btn => btn.classList.remove('green-button'));
+                    this.classList.add('green-button');
+                    sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
+                });
             });
         });
-    });
     </script>
 {% endblock content %}

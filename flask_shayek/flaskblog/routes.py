@@ -3,7 +3,7 @@ from uuid import uuid4
 from flask import current_app as app
 from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort
 from flaskblog import app, firebase, login_manager
-from flaskblog.forms import LoginForm, RegistrationRequestForm, UserLoginForm, UserRegistrationForm, ResetPasswordRequestForm
+from flaskblog.forms import LoginForm, RegistrationRequestForm, MemberRegistrationForm, ResetPasswordRequestForm
 from flask_login import login_user, current_user, logout_user, login_required, UserMixin
 from flask_mail import Mail, Message
 import firebase_admin
@@ -24,7 +24,7 @@ from datetime import datetime
 import uuid
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/maryamibrahim/Desktop/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
@@ -33,9 +33,11 @@ firebase_admin.initialize_app(cred, {
 firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
-# Loading the pre-trained model
-model_path = '/Users/lamiafa/Downloads/ResNet50_Model_Web.h5'
-model = load_model(model_path)
+def get_model_path():
+    current_dir = os.path.dirname(__file__)
+    return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
+
+model = load_model(get_model_path())
 
 def parse_timestamp(timestamp):
     try:
@@ -44,7 +46,7 @@ def parse_timestamp(timestamp):
         return datetime(1970, 1, 1)
 
 def fetch_posts():
-    posts_ref = db.reference('posts').order_by_child('timestamp')
+    posts_ref = db.reference('posts')
     posts_snapshot = posts_ref.get()
     posts = [(post_id, posts_snapshot[post_id]) for post_id in posts_snapshot]
     posts.sort(key=lambda post: parse_timestamp(post[1]['timestamp']), reverse=True)
@@ -94,7 +96,6 @@ def fetch_posts():
     
     return formatted_posts
 
-
 posts = fetch_posts()
 
 def fetch_posts_by_user(user_email):
@@ -102,20 +103,21 @@ def fetch_posts_by_user(user_email):
     posts_snapshot = posts_ref.get()
     if not posts_snapshot:
         return []
-
+    
     posts = []
     for post_id, post_data in posts_snapshot.items():
         count = 0
         comments = post_data.get('comment', {})
         if isinstance(comments, dict):
-            for comment_id, comment_data in comments.items():
-                count += 1
+            count = len(comments)
+
+        parsed_timestamp = parse_timestamp(post_data.get('timestamp'))
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
-            'parsed_timestamp': parse_timestamp(post_data.get('timestamp')),
+            'parsed_timestamp': parsed_timestamp,
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
@@ -126,7 +128,6 @@ def fetch_posts_by_user(user_email):
     posts.sort(key=lambda x: x['parsed_timestamp'], reverse=True)
 
     return posts
-
 
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
@@ -140,7 +141,6 @@ def homepage():
 @app.route('/about')
 def about():
     return render_template('about.html', title = 'من نحن؟')
-
 
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
     cap = cv2.VideoCapture(video_path)
@@ -220,7 +220,6 @@ def upload_video():
             return jsonify({'result': pred_label})
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
-
 @app.route('/home', methods=['GET'])
 @login_required
 def home():
@@ -280,7 +279,6 @@ def home():
     else:
         flash('<i class="fas fa-times-circle me-3"></i> يرجى تسجيل الدخول أولاً', 'danger')
         return redirect(url_for('Member_login'))
-
 
 @app.route('/member_login', methods=['GET', 'POST'])
 def member_login():
@@ -457,8 +455,6 @@ def profile():
         followed_news_outlets=followed_news_outlets
     )
 
-
-
 @app.route('/profile/<username>')
 def user_profile(username):
     user = None
@@ -577,8 +573,6 @@ def user_profile(username):
     flash('لم نستطع إيجاد الحساب.', 'danger')
     return redirect(request.referrer)
 
-
-
 def determine_user_role(email):
     users_ref = db.reference('members')
     users_query_result = users_ref.order_by_child('email').equal_to(email).get()
@@ -592,7 +586,7 @@ def determine_user_role(email):
 
 @app.route('/member_register', methods=['GET', 'POST'])
 def member_register():
-    form = UserRegistrationForm()
+    form = MemberRegistrationForm()
     if form.validate_on_submit():
         username = form.username.data
         email = form.email.data
@@ -877,7 +871,7 @@ def delete_post(post_id):
         for notification_id in related_notifications.keys():
             notifications_ref.child(notification_id).delete()
 
-    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة وجميع التنبيهات المرتبطة بها بنجاح', 'success')
+    flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف النشرة بنجاح', 'success')
 
     referrer = request.referrer
     if 'post' in referrer:
@@ -886,7 +880,6 @@ def delete_post(post_id):
         return redirect(url_for('profile', username=current_user.username))
     
     return redirect(url_for('home'))
-
 
 @app.route('/admin/logout')
 @app.route('/logout')
@@ -948,10 +941,6 @@ def admin_dashboard():
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح، الرجاء تسجيل الدخول كمسؤول', 'danger')
         return redirect(url_for('member_login'))
     
-def encode_email(email):
-    return email.replace('.', 'dot').replace('@', 'at')
-
-
 @app.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow_newsoutlet(username):
@@ -1015,7 +1004,6 @@ def follow_newsoutlet(username):
     else:
         return jsonify({'success': False, 'message': 'News Outlet not found'})
 
-
 @app.route('/unfollow/<username>', methods=['POST'])
 @login_required
 def unfollow_newsoutlet(username):
@@ -1070,8 +1058,6 @@ def unfollow_newsoutlet(username):
     else:
         return jsonify({'success': False, 'message': 'لم يتم إيجاد صفحة المنصة'})
 
-
- 
 @app.route('/notify/<username>', methods=['POST'])
 @login_required
 def notify_newsoutlet(username):
@@ -1109,7 +1095,6 @@ def notify_newsoutlet(username):
     else:
         return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
 
-
 @app.route('/unnotify/<username>', methods=['POST'])
 @login_required
 def unnotify_newsoutlet(username):
@@ -1134,7 +1119,6 @@ def unnotify_newsoutlet(username):
         return jsonify({'success': True, 'message': 'تم إلغاء الاشعارات', 'notification_count': len(current_notifications)})
     else:
         return jsonify({'success': False, 'message': 'لم نستطع إيجاد المنصة الإعلامية'})
-
 
 def fetch_notifications(user_email):
     notifications_ref = db.reference('notifications').order_by_child('member_id').equal_to(user_email.lower()).get()
@@ -1175,8 +1159,6 @@ def fetch_notifications_route():
     else:
         return jsonify({'success': False, 'message': 'لم تقم بتسجيل الدخول'})
 
-
-
 @app.route('/notifications/mark_all_read', methods=['POST'])
 @login_required
 def mark_all_notifications_as_read():
@@ -1198,7 +1180,6 @@ def mark_all_notifications_as_read():
     
     return jsonify({'success': False, 'message': 'No notifications found'}), 404
 
-
 @app.route('/notification/delete/<notification_key>', methods=['POST'])
 @login_required
 def delete_notification(notification_key):
@@ -1211,7 +1192,6 @@ def delete_notification(notification_key):
         return jsonify({'success': True, 'message': 'تم حذف الإشعار بنجاح'})
     
     return jsonify({'success': False, 'message': 'لم يتم إيجاد الإشعار'})
-
 
 @app.route('/post/<string:post_id>')
 def post(post_id):
@@ -1232,7 +1212,6 @@ def inject_notifications():
         notifications = [] 
         unread_count = 0  
     return {'notifications': notifications, 'unread_count': unread_count}
-
 
 @app.route('/post/<string:post_id>/add_comment', methods=['POST'])
 @login_required
@@ -1271,7 +1250,6 @@ def add_comment(post_id):
 
     flash('تمت إضافة التعليق بنجاح', 'success')
     return redirect(url_for('post', post_id=post_id))
-
 
 @app.route('/post/<string:post_id>/reply/<string:comment_id>', defaults={'parent_reply_id': None}, methods=['POST'])
 @app.route('/post/<string:post_id>/reply/<string:comment_id>/<string:parent_reply_id>', methods=['POST'])
@@ -1357,7 +1335,6 @@ def delete_reply(post_id, comment_id, reply_id):
     flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف الرد بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
-
 
 @app.route('/like_post/<post_id>', methods=['POST'])
 @login_required

@@ -8,67 +8,67 @@
     const storedFilter = sessionStorage.getItem('filter') || 'followed';
 
     function goBack() {
-    if (!isAuthenticated) {
-        window.history.back();
-        return;
-    }
+        if (!isAuthenticated) {
+            window.history.back();
+            return;
+        }
 
-    const referrer = document.referrer; 
-    const myProfileUrl = "{{ url_for('profile') }}"; 
-    const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
+        const referrer = document.referrer; 
+        const myProfileUrl = "{{ url_for('profile') }}"; 
+        const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
 
-    if (referrer && profilePagePattern.test(referrer)) {
-        window.location.href = referrer; 
-    } else if (referrer && referrer.includes(myProfileUrl)) {
-        window.location.href = myProfileUrl;
-    } else {
-        let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
-        window.location.href = feedUrlWithFilter;
+        if (referrer && profilePagePattern.test(referrer)) {
+            window.location.href = referrer; 
+        } else if (referrer && referrer.includes(myProfileUrl)) {
+            window.location.href = myProfileUrl;
+        } else {
+            let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+            window.location.href = feedUrlWithFilter;
+        }
     }
-}
     
  
     function toggleReplyForm(commentId, authorName) {
-    const replyForm = document.getElementById(`reply-form-${commentId}`);
-    const replyTextArea = replyForm.querySelector('textarea');
-    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        const replyTextArea = replyForm.querySelector('textarea');
+        replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
 
-    if (!replyTextArea.value.startsWith(`@${authorName}`)) {
-        replyTextArea.value = `@${authorName} `;
-    }
-
-    replyTextArea.focus();
-
-    replyTextArea.addEventListener('input', function() {
         if (!replyTextArea.value.startsWith(`@${authorName}`)) {
-            replyTextArea.value = `@${authorName} ` + replyTextArea.value.substring(replyTextArea.selectionStart);
+            replyTextArea.value = `@${authorName} `;
         }
-    });
-}
+
+        replyTextArea.focus();
+
+        replyTextArea.addEventListener('input', function() {
+            if (!replyTextArea.value.startsWith(`@${authorName}`)) {
+                replyTextArea.value = `@${authorName} ` + replyTextArea.value.substring(replyTextArea.selectionStart);
+            }
+        });
+    }
 
 
     function confirmDelete(deleteUrl) {
         console.log(deleteUrl)
-    if (confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = deleteUrl;
-        document.body.appendChild(form);
-        form.submit();
-    } else {
-        return false; 
-    }
-}   
+        if (confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteUrl;
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            return false; 
+        }
+    }   
 
     function toggleLike(button) {
         if (!isAuthenticated) {
-        alert('يرجى تسجيل الدخول أولاً!');
-        return;
-    }
+            alert('يرجى تسجيل الدخول أولاً!');
+            return;
+        }
         const postId = button.getAttribute('data-post-id');
         const isLiked = button.querySelector('i').classList.contains('liked-heart');
         const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-    
+
         fetch(url, {
             method: 'POST'
         })
@@ -112,18 +112,14 @@
             commentForm.focus();
         }
     }
-
-    
-
 </script>
 
-
 <br>
-    <article class="media content-section">
-        <div class="media-body">
-            <div class="article-metadata text-right">
-                <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                {% if post.author_email == username %}
+<article class="media content-section">
+    <div class="media-body">
+        <div class="article-metadata text-right">
+            <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+            {% if post.author_email == username %}
                 <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
                     <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
                         <i class="fas fa-trash"></i>
@@ -136,56 +132,54 @@
                         }
                     }
                 </script>
-               {% endif %}
-                <small class="text-muted">{{ post.timestamp }}</small>
-            </div> 
-            <h3 class="article-title">{{ post.title }}</h3>
-            <p class="article-content">{{ post.content }}
-                {% if post.media %}
-                    {% set file_ext = post.media.split('.')[-1].lower() %}
-                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video class="post-video" controls>
-                            <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                        </video>
-                    {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                    {% endif %}
+            {% endif %}
+            <small class="text-muted">{{ post.timestamp }}</small>
+        </div> 
+        <h3 class="article-title">{{ post.title }}</h3>
+        <p class="article-content">{{ post.content }}
+            {% if post.media %}
+                {% set file_ext = post.media.split('.')[-1].lower() %}
+                {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                    <video class="post-video" controls>
+                        <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                    </video>
+                {% else %}
+                    <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                 {% endif %}
-            </p>
-            <div class="post-comments" >
-                <button class="comment-button" onclick="focusCommentForm()">
-                    <i class="far fa-comment"></i>
-                    <span>{{ post.count }}</span>
-                </button>
+            {% endif %}
+        </p>
+        <div class="post-comments" >
+            <button class="comment-button" onclick="focusCommentForm()">
+                <i class="far fa-comment"></i>
+                <span>{{ post.count }}</span>
+            </button>
                 <div style="margin-left: 5px;"></div>
-                <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)">
-                    <i class="far fa-heart 
-                        {% if current_user.get_id() in post.liked_by %} 
-                            fas liked-heart 
-                        {% endif %}"></i> 
-                    <span>{{ post.likes }}</span>
-                </button>                
-            </div>
+            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)">
+                <i class="far fa-heart 
+                    {% if current_user.get_id() in post.liked_by %} 
+                        fas liked-heart 
+                    {% endif %}"></i> 
+                <span>{{ post.likes }}</span>
+            </button>                
         </div>
-    </article>
+    </div>
+</article>
 
-   
-    <div class="comment-section">
-        <h4>تعليقات</h4>
-    
-        {% if current_user.is_authenticated %}
+<div class="comment-section">
+    <h4>تعليقات</h4>
+    {% if current_user.is_authenticated %}
         <form action="{{ url_for('add_comment', post_id=post.post_id) }}" method="POST">
-            <textarea name="comment" placeholder="Add a comment" rows="3" required></textarea>
+            <textarea name="comment" placeholder="اكتب تعليقك هنا" rows="3" required></textarea>
             <button class="btn btn-primary" type="submit">أضف تعليق</button>
         </form>
-        {% else %}
+    {% else %}
         <div class="login-prompt">
             أنت بحاجة إلى  <a href="{{ url_for('newsoutlet_login') }}">تسجيل الدخول كمنصة اعلامية</a> او <a href="{{ url_for('member_login') }}">تسجيل الدخول كعضو</a> لإضافة تعليق.
         </div>
-        {% endif %}
-    
-        <ul class="comment-list">
-            {% for comment in post.comments %}
+    {% endif %}
+
+    <ul class="comment-list">
+        {% for comment in post.comments %}
             <li class="comment">
                 <div class="comment-header">
                     <strong>{{ comment.author }}</strong>
@@ -194,13 +188,13 @@
                 <p>{{ comment.body }}</p>
         
                 {% if current_user.is_authenticated %}
-                <button class="btn btn-primary" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
+                    <button class="btn btn-primary" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
                 {% endif %}
         
                 {% if comment.author_email == current_user.get_id() %}
-                <form action="{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST" style="display:inline;">
-                    <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
-                </form>
+                    <form action="{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST" style="display:inline;">
+                        <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
+                    </form>
                 {% endif %}
         
                 <div class="reply-form" id="reply-form-{{ comment.comment_id }}" style="display:none;">
@@ -210,44 +204,39 @@
                     </form>
                 </div>
                 {% if comment.replies %}
-                <ul class="reply-list" id="replies-{{ comment.comment_id }}" style="display:none;">
-                    {% for reply in comment.replies %}
-                    <li class="reply">
-                        <div class="reply-header">
-                            <strong>{{ reply.author }}</strong>
-                            <small>{{ reply.timestamp }}</small>
-                        </div>
-                        <p>{{ reply.body }}</p>
-        
-                        {% if current_user.is_authenticated %}
-                        <button class="btn btn-primary" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
-                        {% endif %}
-        
-                        {% if reply.author_email == current_user.get_id() %}
-                        <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
-                            <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
-                        </form>
-                        {% endif %}
-        
-                        <div class="reply-form" id="reply-form-{{ reply.reply_id }}" style="display:none;">
-                            <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id, parent_reply_id=reply.reply_id) }}" method="POST">
-                                <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
-                                <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
-                                <button class="btn btn-primary" type="submit">أضف الرد</button>
-                            </form>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
+                    <ul class="reply-list" id="replies-{{ comment.comment_id }}" style="display:none;">
+                        {% for reply in comment.replies %}
+                            <li class="reply">
+                                <div class="reply-header">
+                                    <strong>{{ reply.author }}</strong>
+                                    <small>{{ reply.timestamp }}</small>
+                                </div>
+                                <p>{{ reply.body }}</p>
+                
+                                {% if current_user.is_authenticated %}
+                                    <button class="btn btn-primary" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
+                                {% endif %}
+                
+                                {% if reply.author_email == current_user.get_id() %}
+                                    <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
+                                        <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
+                                    </form>
+                                {% endif %}
+                
+                                <div class="reply-form" id="reply-form-{{ reply.reply_id }}" style="display:none;">
+                                    <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id, parent_reply_id=reply.reply_id) }}" method="POST">
+                                        <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
+                                        <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
+                                        <button class="btn btn-primary" type="submit">أضف الرد</button>
+                                    </form>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 <button class="btn btn-primary mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
                 {% endif %}
-
-            </li>
-            <hr>
-            {% endfor %}
-        </ul>        
-        
-    </div>
-    
-    {% endblock %}
-    
+            </li><hr>
+        {% endfor %}
+    </ul>        
+</div>
+{% endblock %}    

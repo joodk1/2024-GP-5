@@ -7,11 +7,6 @@ class LoginForm(FlaskForm):
     password = PasswordField('كلمة المرور', validators=[DataRequired()])
     submit = SubmitField('تسجيل الدخول')
 
-class UserLoginForm(FlaskForm):
-    email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
-    password = PasswordField('كلمة المرور', validators=[DataRequired()])
-    submit = SubmitField('تسجيل الدخول')
-
 class RegistrationRequestForm(FlaskForm):
     username = StringField('الاسم الثنائي', validators=[DataRequired()])
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
@@ -34,7 +29,7 @@ class RegistrationRequestForm(FlaskForm):
         if hasattr(self, 'verified'):
             delattr(self, 'verified')
 
-class UserRegistrationForm(FlaskForm):
+class MemberRegistrationForm(FlaskForm):
     username = StringField('اسم المستخدم (يفضل أن يكون باللغة العربية)', validators=[DataRequired()])
     email = StringField('البريد الإلكتروني', validators=[DataRequired(), Email()])
     password = PasswordField('كلمة المرور', validators=[
