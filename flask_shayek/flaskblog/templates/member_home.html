@@ -1,89 +1,92 @@
 {% extends "layout.html" %}
 
 {% block content %}
-    <!-- Toggle between all posts and posts by followed users -->
+<!-- Toggle between all posts and followed users -->
+<div class="d-flex justify-content-center">
     <div class="btn-group" role="group" aria-label="Post Filter">
         <a href="{{ url_for('home', filter='followed') }}" 
-        class="btn btn-outline-primary {% if filter == 'followed' %}active green-button{% endif %} post-filter-btn" 
-        data-filter="followed">
-         المتابعين
-     </a>
+            class="btn btn-outline-primary {% if filter == 'followed' %}active green-button{% endif %} post-filter-btn" 
+            data-filter="followed">
+            المتابعين
+        </a>
         <a href="{{ url_for('home', filter='all') }}" 
-           class="btn btn-outline-primary {% if filter == 'all' %}active green-button{% endif %} post-filter-btn" 
-           data-filter="all">
+            class="btn btn-outline-primary {% if filter == 'all' %}active green-button{% endif %} post-filter-btn" 
+            data-filter="all">
             الجميع
         </a>
     </div>
+</div>
     
-    <script>
-        const feedUrl = "{{ url_for('home', filter=filter) }}";
-        document.addEventListener('DOMContentLoaded', function () {
-            const buttons = document.querySelectorAll('.post-filter-btn');
-            let currentFilter = sessionStorage.getItem('filter');
+<script>
+    const feedUrl = "{{ url_for('home', filter=filter) }}";
+    document.addEventListener('DOMContentLoaded', function () {
+        const buttons = document.querySelectorAll('.post-filter-btn');
+        let currentFilter = sessionStorage.getItem('filter');
 
-        if (!currentFilter) {
-        currentFilter = 'followed';  
-        sessionStorage.setItem('filter', currentFilter); }
+    if (!currentFilter) {
+    currentFilter = 'followed';  
+    sessionStorage.setItem('filter', currentFilter); }
 
-    
-            buttons.forEach(button => {
-                button.addEventListener('click', function () {
-                    buttons.forEach(btn => btn.classList.remove('green-button'));
-                    this.classList.add('green-button');
-                });
-            });
-            const scrollPosition = sessionStorage.getItem('scrollPosition');
-        if (scrollPosition) {
-            window.scrollTo(0, scrollPosition);
-            sessionStorage.removeItem('scrollPosition'); 
-        }
+
         buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            const selectedFilter = this.dataset.filter;
-            storeFilter(selectedFilter); });});
-
-            function storeScrollPosition() {
-        sessionStorage.setItem('scrollPosition', window.scrollY);
+            button.addEventListener('click', function () {
+                buttons.forEach(btn => btn.classList.remove('green-button'));
+                this.classList.add('green-button');
+            });
+        });
+        const scrollPosition = sessionStorage.getItem('scrollPosition');
+    if (scrollPosition) {
+        window.scrollTo(0, scrollPosition);
+        sessionStorage.removeItem('scrollPosition'); 
     }
-    function storeFilter(filter) {
-    sessionStorage.setItem('filter', filter);}
-    window.location.href = "{{ url_for('home', filter='') }}" + filter;});
-    
+    buttons.forEach(button => {
+    button.addEventListener('click', function() {
+        const selectedFilter = this.dataset.filter;
+        storeFilter(selectedFilter); });});
 
-    window.addEventListener('beforeunload', function () {
-        sessionStorage.setItem('scrollPosition', window.scrollY);
-    });
+        function storeScrollPosition() {
+    sessionStorage.setItem('scrollPosition', window.scrollY);
+}
+function storeFilter(filter) {
+sessionStorage.setItem('filter', filter);}
+window.location.href = "{{ url_for('home', filter='') }}" + filter;});
 
+
+window.addEventListener('beforeunload', function () {
+    sessionStorage.setItem('scrollPosition', window.scrollY);
+});
+
+
+    function toggleLike(button) {
+        const postId = button.getAttribute('data-post-id');
+        const isLiked = button.querySelector('i').classList.contains('liked-heart');
+        const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
     
-        function toggleLike(button) {
-            const postId = button.getAttribute('data-post-id');
-            const isLiked = button.querySelector('i').classList.contains('liked-heart');
-            const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-        
-            fetch(url, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (isLiked) {
-                        
-                        button.querySelector('i').classList.remove('fas', 'liked-heart');
-                        button.querySelector('i').classList.add('far');
-                    } else {
-                        
-                        button.querySelector('i').classList.remove('far');
-                        button.querySelector('i').classList.add('fas', 'liked-heart');
-                    }
-                    button.querySelector('span').textContent = data.likes;
+        fetch(url, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (isLiked) {
+                    
+                    button.querySelector('i').classList.remove('fas', 'liked-heart');
+                    button.querySelector('i').classList.add('far');
                 } else {
-                    console.error(data.message);
+                    
+                    button.querySelector('i').classList.remove('far');
+                    button.querySelector('i').classList.add('fas', 'liked-heart');
                 }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-    </script>
-    
+                button.querySelector('span').textContent = data.likes;
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+{% if posts %}    
     {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}
         <article class="media content-section">
             <div class="media-body">
@@ -126,4 +129,13 @@
             </div>
         </article>
     {% endfor %}
+{% else %}
+    {% if filter == 'followed' %}
+    <div class="alert alert-info text-center mt-4">
+        لم تقم بمتابعة أي منصة إعلامية بعد! اضغط 
+        <a href="{{ url_for('home', filter='all') }}" class="alert-link">هنا</a>
+         لمشاهدة جميع المنشورات على شيّــك
+    </div>
+    {% endif %} 
+{% endif %}    
 {% endblock %}

@@ -6,6 +6,24 @@
   --light-green: #7DBB46; 
 } 
 
+body, html {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+}
+
+.footer {
+  bottom: 0;
+  width: 100%;
+  background-color: white !important;
+  border-top:  1px solid #ddd;
+}
+
 body {
   font-family: 'Droid Arabic Kufi', sans-serif;
   background: #fafafa;
@@ -32,6 +50,10 @@ p {
   background-color: white;
 }
 
+.navbar{
+  border-bottom:  1px solid #ddd;
+}
+
 .site-header .navbar-nav .nav-link, a {
   color: var(--dark-green);
 }
@@ -48,7 +70,7 @@ p {
 .content-section {
   background: white;
   padding: 10px 10px;
-  border: 1px solid #dddddd;
+  border: 1px solid #ddd;
   border-radius: 3px;
   margin-bottom: 20px;
 }
@@ -73,7 +95,6 @@ a.article-title:hover {
   margin-bottom: 4px;
   border-bottom: 1px solid #e3e3e3;
 }
-
 
 .account-info {
   float: left;
@@ -278,7 +299,7 @@ a.article-title:hover {
 }
 
 .login-prompt a {
-  color: #007bff;
+  color: var(--light-green);
   text-decoration: none;
 }
 
