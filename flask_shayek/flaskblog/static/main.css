@@ -407,6 +407,7 @@ button:hover {
   align-items: center;
   font-size: 16px;
   color: var(--dark-green); 
+  outline: none;
 }
 
 .like-button:hover {
@@ -440,6 +441,7 @@ color: red ;
   align-items: center;
   font-size: 16px;
   color: var(--dark-green);  
+  outline: none;
 }
 
 .comment-button:hover {
@@ -468,6 +470,10 @@ color: red ;
   margin-left: 6px; 
 }
 
+.like-button:focus,
+.comment-button:focus {
+    outline: none; 
+}
 
 .unread-notification {
   background-color: #ffffcc;
