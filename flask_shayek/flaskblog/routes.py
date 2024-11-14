@@ -212,7 +212,7 @@ def upload_video():
             video.save(video_path)
             processed_frames = extract_and_preprocess_frames(video_path)
             if processed_frames.size == 0:
-                return jsonify({'error': 'No faces detected or video is corrupted'})
+                return jsonify({'error': 'لم نستطع إيجاد وجوه'})
             processed_frames = np.expand_dims(processed_frames, axis=0)
             pred = model.predict(processed_frames)[0][0]
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
