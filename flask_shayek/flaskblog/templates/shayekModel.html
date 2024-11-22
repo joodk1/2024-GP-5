@@ -12,9 +12,9 @@
                     <div class="disclaimer">
                         <p>يرجى التأكد من التالي قبل رفع الفيديو: <br> 
                             <ul style="direction: rtl; text-align: right;">
-                                <li>يجب أن يكون الفيديو بصيغة mp4</li>
+                                <li>يجب أن يكون الفيديو بصيغة .mp4</li>
+                                <li>سيتم التحقق من من المقاطع المعدلة باستخدام طريقة الـ Deepfake فقط</li>
                                 <li>يجب ألا تقل مدة الفيديو عن ٤ ثواني</li>
-                                <li>سيتم التحقق من من المقاطع المعدلة باستخدام تقنية الـ Deepfake فقط</li>
                             </ul>
                         </p>
                         <hr>
@@ -22,63 +22,230 @@
                     <h3 class="text-center">رفع الفيديو</h3>
                     <div class="containerModel">
                         <form id="videoForm" action="/shayekModel" method="post" enctype="multipart/form-data">
-                            <label class="custom-file-upload">
-                                <input type="file" name="video" accept="video/*" required onchange="showFileName()">
-                                اختيار ملف
-                            </label>
-                            <span id="fileName"></span>
+                            <input type="file" name="video" accept="video/*" required style="padding-left: 6px;">
                             <br><br>
-                            <button type="submit" class="btn btn-primary model-btn">تحقق من الفيديو</button>
+                            <div style="display: inline-block;">
+                                <button type="submit" class="btn btn-primary">تحقق من الفيديو</button>
+                                <button type="button" id="stampButton" class="btn btn-primary" style="display: none;">
+                                    ختم الفيديو
+                                </button>  
+                            </div>                      
                         </form>
                         <div class="loader" style="display: none;"></div>
                         <div id="result"></div>
                     </div>        
                     <span id="result" style="margin-left: 2px;"></span>
 
+                    <div id="videoModal" class="modal fade" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-xl modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="videoModalLabel">الفيديو بعد الختم</h5>
+                                </div>
+                                <div class="modal-body">
+                                    <video id="stampedVideo" width="100%" controls>
+                                        <source id="videoSource" src="" type="video/mp4">
+                                        متصفحك لا يدعم مشغل الفيديو.
+                                    </video>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" id="closeModalButton">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                                                          
+                                     
                     <script>
-                        function showFileName() {
-                            var fileInput = document.querySelector('input[type="file"]');
-                            var fileName = fileInput.files[0] ? fileInput.files[0].name : '';
-                            document.getElementById('fileName').innerText = fileName;
-                        }
-
                         document.getElementById('videoForm').addEventListener('submit', function(event) {
                             event.preventDefault();
-                            
-                            // Clear previous result and file name
-                            document.getElementById('result').innerText = '';
-                            
                             var formData = new FormData(this);
                             
                             document.querySelector('.loader').style.display = 'block';
-                        
                             var xhr = new XMLHttpRequest();
                             xhr.open('POST', this.action, true);
                             xhr.onload = function () {
-                                document.querySelector('.loader').style.display = 'none';
+
+                                var loader = document.querySelector('.loader');
+                                if (loader) loader.style.display = 'none';
+                                
+                                var resultSpan = document.getElementById('result');
+                                var stampButton = document.getElementById('stampButton');
                                 
                                 if (this.status == 200) {
                                     var response = JSON.parse(this.response);
-                                    var resultSpan = document.getElementById('result');
+                                    
                                     if (response.error) {
                                         resultSpan.innerText = response.error;
+                                        if (stampButton) stampButton.style.display = 'none';
                                     } else {
                                         resultSpan.innerText = 'النتيجة: ' + response.result;
+                                        
+                                        const code = response.code;
+
+                                        if (code === 1 || code === 2) {
+                                            if (stampButton) stampButton.style.display = 'inline-block';
+                                            stampButton.onclick = function(event) {
+                                                startStamp(event, code);
+                                            };
+                                        } else {
+                                            if (stampButton) stampButton.style.display = 'none';
+                                        }
                                     }
                                 } else {
-                                    document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                    if (resultSpan) resultSpan.innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                    if (stampButton) stampButton.style.display = 'none';
                                 }
                             };
+                            
                             xhr.onerror = function() {
-                                document.querySelector('.loader').style.display = 'none';
-                                document.getElementById('result').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                var loader = document.querySelector('.loader');
+                                if (loader) loader.style.display = 'none';
+                                
+                                var resultSpan = document.getElementById('result');
+                                if (resultSpan) resultSpan.innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                
+                                var stampButton = document.getElementById('stampButton');
+                                if (stampButton) stampButton.style.display = 'none';
                             };
                             xhr.send(formData);
                         });
-                    </script>                    
+
+                        function startStamp(event, code) {
+                            event.preventDefault();
+
+                            const formData = new FormData(document.getElementById('videoForm'));
+                            const videoFile = formData.get('video');
+
+                            if (!videoFile) {
+                                console.error("No video file found in the form");
+                                return;
+                            }
+
+                            const stampData = new FormData();
+                            stampData.append('video', videoFile);
+
+                            if (code) {
+                                stampData.append('code', code);
+                            } else {
+                                console.error("No code provided");
+                                return;
+                            }
+
+                            document.querySelector('.loader').style.display = 'block';
+
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('POST', '/video_stamp', true);
+                            xhr.onload = function () {
+                                const loader = document.querySelector('.loader');
+                                if (loader) loader.style.display = 'none';
+
+                                if (this.status === 200) {
+                                    const response = JSON.parse(this.response);
+                                    const resultSpan = document.getElementById('result');
+                                    const downloadButton = document.getElementById('downloadButton');
+
+                                    if (response.error) {
+                                        resultSpan.innerText = response.error;
+                                        if (downloadButton) downloadButton.style.display = 'none';
+                                    } else {
+                                        resultSpan.innerText = 'تم ختم الفيديو بنجاح.';
+                                        if (downloadButton) {
+                                            downloadButton.href = `/download/${response.watermarked_video_path.split('/').pop()}`;
+                                            downloadButton.style.display = 'inline';
+                                        }
+
+                                        const videoModal = document.getElementById('videoModal');
+                                        const videoSource = document.getElementById('videoSource');
+                                        const filename = response.watermarked_video_path.split('/').pop();
+                                        videoSource.src = `/static/stamped/${filename}`;
+                                        console.log(videoSource.src);
+                                        const videoElement = document.getElementById('stampedVideo');
+
+                                        videoElement.load();
+
+                                        videoModal.style.display = 'block';
+                                        videoModal.classList.add('show');
+
+                                        videoModal.addEventListener('click', function (event) {
+                                            if (event.target === videoModal) {
+                                                event.stopPropagation();
+                                            }
+                                        });
+
+                                        document.addEventListener('keydown', function (event) {
+                                            if (event.key === 'Escape') {
+                                                event.preventDefault();
+                                            }
+                                        });
+
+                                        const closeModalButton = document.getElementById('closeModalButton');
+                                        closeModalButton.addEventListener('click', function () {
+                                            videoModal.style.display = 'none';
+                                            videoModal.classList.remove('show');
+                                            stampButton.style.display = 'none'; // Hide the stamp button on close
+                                        });
+                                    }
+                                } else {
+                                    const resultSpan = document.getElementById('result');
+                                    if (resultSpan) resultSpan.innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                    const downloadButton = document.getElementById('downloadButton');
+                                    if (downloadButton) downloadButton.style.display = 'none';
+                                }
+                            };
+
+                            xhr.onerror = function () {
+                                const loader = document.querySelector('.loader');
+                                if (loader) loader.style.display = 'none';
+
+                                const resultSpan = document.getElementById('result');
+                                if (resultSpan) resultSpan.innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                const downloadButton = document.getElementById('downloadButton');
+                                if (downloadButton) downloadButton.style.display = 'none';
+                            };
+
+                            xhr.send(stampData);
+                        }
+
+                        document.addEventListener("DOMContentLoaded", () => {
+                            const closeModalButton = document.getElementById("closeModalButton");
+                            const videoModal = document.getElementById("videoModal");
+                            const stampButton = document.getElementById("stampButton");
+
+                            closeModalButton.addEventListener("click", () => {
+                                const videoSource = document.getElementById("videoSource");
+                                const videoPath = videoSource.src.split('/').pop();
+
+                                
+                                if (stampButton) stampButton.style.display = "none";
+
+                                fetch('/delete_video', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({ video_path: videoPath }),
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            console.log(data.success);
+                                        } else {
+                                            console.error(data.error);
+                                        }
+                                    })
+                                    .catch(error => console.error('Error:', error));
+
+                                
+                                videoModal.style.display = "none";
+                                document.body.classList.remove("modal-open");
+                                const backdrop = document.querySelector(".custom-backdrop");
+                                if (backdrop) backdrop.style.display = "none";
+                            });
+                        });
+                    </script>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock content %}
+{% endblock %}

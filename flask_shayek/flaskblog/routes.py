@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 from flask import current_app as app
-from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort
+from flask import render_template, url_for, flash, redirect, request, Flask, session, jsonify, abort, send_from_directory
 from flaskblog import app, firebase, login_manager
 from flaskblog.forms import LoginForm, RegistrationRequestForm, MemberRegistrationForm, ResetPasswordRequestForm
 from flask_login import login_user, current_user, logout_user, login_required, UserMixin
@@ -17,15 +17,16 @@ from itsdangerous import URLSafeTimedSerializer
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model # type: ignore
 import dlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import uuid
+from PIL import Image
+from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
-
+cred = credentials.Certificate('C:\\Users\\almah\\Documents\\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -33,11 +34,19 @@ firebase_admin.initialize_app(cred, {
 firebase_database = db.reference()
 detector = dlib.get_frontal_face_detector()
 
-def get_model_path():
-    current_dir = os.path.dirname(__file__)
-    return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
+# Loading the pre-trained model
+model_path = 'C:\\Users\\almah\\Documents\\2024-GP-5\\flask_shayek\\ResNet50_Model_Web.h5'
+model = load_model(model_path)
 
-model = load_model(get_model_path())
+#def get_model_path():
+ #   current_dir = os.path.dirname(_file_)
+  #  return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
+#model = load_model(get_model_path())
+
+UPLOAD_FOLDER = 'uploads'
+STAMPED_FOLDER = 'flaskblog/static/stamped/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(STAMPED_FOLDER, exist_ok=True)
 
 def parse_timestamp(timestamp):
     try:
@@ -46,7 +55,7 @@ def parse_timestamp(timestamp):
         return datetime(1970, 1, 1)
 
 def fetch_posts():
-    posts_ref = db.reference('posts')
+    posts_ref = db.reference('posts').order_by_child('timestamp')
     posts_snapshot = posts_ref.get()
     posts = [(post_id, posts_snapshot[post_id]) for post_id in posts_snapshot]
     posts.sort(key=lambda post: parse_timestamp(post[1]['timestamp']), reverse=True)
@@ -103,21 +112,20 @@ def fetch_posts_by_user(user_email):
     posts_snapshot = posts_ref.get()
     if not posts_snapshot:
         return []
-    
+
     posts = []
     for post_id, post_data in posts_snapshot.items():
         count = 0
         comments = post_data.get('comment', {})
         if isinstance(comments, dict):
-            count = len(comments)
-
-        parsed_timestamp = parse_timestamp(post_data.get('timestamp'))
+            for comment_id, comment_data in comments.items():
+                count += 1
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
-            'parsed_timestamp': parsed_timestamp,
+            'parsed_timestamp': parse_timestamp(post_data.get('timestamp')),
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
@@ -128,6 +136,7 @@ def fetch_posts_by_user(user_email):
     posts.sort(key=lambda x: x['parsed_timestamp'], reverse=True)
 
     return posts
+
 
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
@@ -181,7 +190,7 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
     return np.array(processed_frames)
 
 @app.route('/shayekModel',methods=['GET','POST'])
-def shayekModel(): 
+def shayekModel():  
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -193,32 +202,149 @@ def shayekModel():
                 processed_frames = extract_and_preprocess_frames(video_path)
                 if processed_frames.size == 0:
                     os.remove(video_path)
-                    return jsonify({'error': 'لم نستطع إيجاد أوجه في الفيديو'})
+                    return jsonify({'error': 'لم نستطع إيجاد وجوه ', 'code': 0})
                 processed_frames = np.expand_dims(processed_frames, axis=0)
                 pred = model.predict(processed_frames)[0][0]
-                pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
-                return jsonify({'result': pred_label})
-            return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
-    return render_template('shayekModel.html', title = 'نشيّك؟')
+                if pred <= 0.5:
+                    pred_label = 'الفيديو حقيقي'
+                    code = 1
+                else:
+                    pred_label = 'الفيديو معدل'
+                    code = 2
+                return jsonify({'result': pred_label, 'code': code})
+            return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف', 'code': 0})
+
+    return render_template('shayekModel.html', title='نشيّك؟', code=1)
+
+    
+@app.route('/delete_video', methods=['POST'])
+def delete_video():
+
+    video_path = request.json.get('video_path')
+    if not video_path:
+        return jsonify({'error': 'No video path provided'}), 400
+
+    try:
+        stamped_path = os.path.join(STAMPED_FOLDER, video_path)
+        if os.path.exists(stamped_path):
+            os.remove(stamped_path)
+            return jsonify({'success': 'Video deleted successfully'})
+        else:
+            return jsonify({'error': 'Video not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/upload_video', methods=['GET','POST'])
-def upload_video():
+def upload_video(): 
     if request.files:
         video = request.files['video']
         if video.filename != '':
             upload_folder = 'uploads'
             os.makedirs(upload_folder, exist_ok=True)
-            video_path = os.path.join('uploads', video.filename)
+            video_path = os.path.join(upload_folder, video.filename)
             video.save(video_path)
             processed_frames = extract_and_preprocess_frames(video_path)
             if processed_frames.size == 0:
-                return jsonify({'error': 'لم نستطع إيجاد وجوه'})
+                return jsonify({'error': 'No faces detected or video is corrupted'})
             processed_frames = np.expand_dims(processed_frames, axis=0)
             pred = model.predict(processed_frames)[0][0]
             pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
-            os.remove(video_path)
-            return jsonify({'result': pred_label})
+            return jsonify({'result': pred_label, 'video_path': video_path})
+            return jsonify({'result': 'nothing', 'video_path': video_path})
     return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+
+@app.route('/video_stamp', methods=['POST'])
+def video_stamp():
+    if 'video' not in request.files:
+        return jsonify({"error": "لم يتم رفع الفيديو"}), 400
+
+    video_file = request.files['video']
+
+    if not video_file.filename.endswith('.mp4'):
+        return jsonify({"error": "ملف الفيديو يجب أن يكون بصيغة .mp4"}), 400
+
+    code = request.form.get('code', type=int)
+
+    video_path = os.path.join(UPLOAD_FOLDER, video_file.filename)
+    video_file.save(video_path)
+
+    if code == 1:
+        stamp_image_path = 'flaskblog/static/images/true.png'
+    elif code == 2:
+        stamp_image_path = 'flaskblog/static/images/false.png'
+    else:
+        stamp_image_path = 'flaskblog/static/images/false.png'
+
+    try:
+        cap = cv2.VideoCapture(video_path)
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))
+
+        output_width = min(width, 1080)
+        output_height = int(output_width * (height / width))
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        stamped_filename = f"{uuid.uuid4()}_stamped.mp4"
+        stamped_path = os.path.join(STAMPED_FOLDER, stamped_filename)
+
+        out = cv2.VideoWriter(stamped_path, fourcc, fps, (output_width, output_height))
+
+        stamp = cv2.imread(stamp_image_path, cv2.IMREAD_UNCHANGED)
+        if stamp is None:
+            return jsonify({"error": "لم يتم العثور على صورة الختم"}), 400
+
+        stamp_height = 350
+        scale = stamp_height / stamp.shape[0]
+        stamp_rgb = cv2.resize(stamp, (int(stamp.shape[1] * scale), int(stamp.shape[0] * scale)))
+
+        stamp_height, stamp_width = stamp_rgb.shape[:2]
+
+        if stamp_rgb.shape[2] == 4:
+            alpha_channel = stamp_rgb[:, :, 3]
+            stamp_rgb = stamp_rgb[:, :, :3]
+        else:
+            alpha_channel = None
+
+        stamp_x = (output_width - stamp_width) // 2
+        stamp_y = (output_height - stamp_height) // 2
+
+        if stamp_x < 0 or stamp_y < 0:
+            return jsonify({"error": "صورة الختم أكبر من إطار الفيديو"}), 400
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame = cv2.resize(frame, (output_width, output_height))
+
+            if alpha_channel is not None:
+                for c in range(3):
+                    frame[stamp_y:stamp_y + stamp_height, stamp_x:stamp_x + stamp_width, c] = \
+                        (stamp_rgb[:, :, c] * (alpha_channel / 255.0) +
+                         frame[stamp_y:stamp_y + stamp_height, stamp_x:stamp_x + stamp_width, c] * (1.0 - alpha_channel / 255.0))
+            else:
+                frame[stamp_y:stamp_y + stamp_height, stamp_x:stamp_x + stamp_width] = stamp_rgb
+
+            out.write(frame)
+
+        cap.release()
+        out.release()
+
+        stamped_compressed_path = os.path.join(STAMPED_FOLDER, f"compressed_{stamped_filename}")
+        with VideoFileClip(stamped_path) as video_clip:
+            video_clip.write_videofile(stamped_compressed_path, bitrate="500k")
+
+        os.remove(stamped_path)
+        os.remove(video_path)
+
+        return jsonify({"watermarked_video_path": f"compressed_{stamped_filename}", "code": code}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"خطأ أثناء ختم الفيديو: {str(e)}"}), 500
+
+
 
 @app.route('/home', methods=['GET'])
 @login_required
