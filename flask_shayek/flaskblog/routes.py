@@ -55,7 +55,7 @@ def parse_timestamp(timestamp):
         return datetime(1970, 1, 1)
 
 def fetch_posts():
-    posts_ref = db.reference('posts').order_by_child('timestamp')
+    posts_ref = db.reference('posts')
     posts_snapshot = posts_ref.get()
     posts = [(post_id, posts_snapshot[post_id]) for post_id in posts_snapshot]
     posts.sort(key=lambda post: parse_timestamp(post[1]['timestamp']), reverse=True)
@@ -112,20 +112,21 @@ def fetch_posts_by_user(user_email):
     posts_snapshot = posts_ref.get()
     if not posts_snapshot:
         return []
-
+    
     posts = []
     for post_id, post_data in posts_snapshot.items():
         count = 0
         comments = post_data.get('comment', {})
         if isinstance(comments, dict):
-            for comment_id, comment_data in comments.items():
-                count += 1
+            count = len(comments)
+
+        parsed_timestamp = parse_timestamp(post_data.get('timestamp'))
         posts.append({
             'post_id': post_id,
             'author': post_data.get('author'),
             'author_email': post_data.get('author_email'),
             'timestamp': post_data.get('timestamp'),
-            'parsed_timestamp': parse_timestamp(post_data.get('timestamp')),
+            'parsed_timestamp': parsed_timestamp,
             'title': post_data.get('title'),
             'content': post_data.get('body'),
             'media': post_data.get('media_url'),
