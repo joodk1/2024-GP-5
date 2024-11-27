@@ -38,10 +38,11 @@ detector = dlib.get_frontal_face_detector()
 model_path = 'C:\\Users\\almah\\Documents\\2024-GP-5\\flask_shayek\\ResNet50_Model_Web.h5'
 model = load_model(model_path)
 
-#def get_model_path():
- #   current_dir = os.path.dirname(_file_)
-  #  return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
-#model = load_model(get_model_path())
+def get_model_path():
+   current_dir = os.path.dirname(_file_)
+   return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
+
+model = load_model(get_model_path())
 
 UPLOAD_FOLDER = 'uploads'
 STAMPED_FOLDER = 'flaskblog/static/stamped/'
@@ -511,6 +512,28 @@ def newsoutlet_login():
 
     return render_template('newsoutlet_login.html', title='تسجيل دخول المنصة الإعلامية', form=form)
 
+def fetch_liked_posts(user_email):
+    posts_ref = db.reference('posts')
+    liked_posts = []
+
+    all_posts = posts_ref.get() or {}
+    for post_id, post_data in all_posts.items():
+        liked_by = post_data.get('liked_by', [])
+        
+        if user_email in liked_by:
+            post_data['post_id'] = post_id
+
+            comments = post_data.get('comment', {})
+            count = 0
+            if isinstance(comments, dict):
+                count = len(comments)
+
+            post_data['count'] = count
+            liked_posts.append(post_data)
+            liked_posts.sort(key=lambda post: parse_timestamp(post.get('timestamp', '')), reverse=True)
+
+    return liked_posts
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -530,7 +553,8 @@ def profile():
 
     username = list(user_ref.values())[0].get('username')
     posts = fetch_posts_by_user(user_email)
-
+    liked_posts = fetch_liked_posts(user_email)
+    
     followed_news_outlets = []
     followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
 
@@ -574,12 +598,14 @@ def profile():
                             user_info=username, 
                             followers=followers_usernames, 
                             followed_news_outlets=followed_news_outlets, 
-                            posts=posts)
+                            posts=posts,
+                            liked_posts=liked_posts)
 
     return render_template(
         'member_myprofile.html',
         user_info=username,
-        followed_news_outlets=followed_news_outlets
+        followed_news_outlets=followed_news_outlets,
+        liked_posts=liked_posts
     )
 
 @app.route('/profile/<username>')
@@ -1527,3 +1553,10 @@ def clear_session_storage():
         window.location.href = '/';
     </script>
     '''
+
+@app.route('/liked_posts')
+@login_required
+def liked_posts():
+    user_liked_posts = fetch_liked_posts(current_user.get_id())  
+    
+    return render_template('liked_posts.html', liked_posts=user_liked_posts)
