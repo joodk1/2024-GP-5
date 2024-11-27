@@ -115,7 +115,8 @@ window.addEventListener('beforeunload', function () {
                 <div class="post-comments">
                     <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
                         <i class="far fa-comment"></i>
-                        <span>{{ post.count }}</span> </button>
+                        <span>{{ post.count }}</span>
+                    </button>
                     
                     <div style="margin-left: 5px;"></div>
                     <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >

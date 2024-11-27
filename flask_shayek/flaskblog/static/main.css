@@ -397,6 +397,14 @@ button:hover {
 .reply-form {
   margin-top: 10px; 
 }
+
+#videoModal .modal-dialog {
+  max-width: 50%;
+}
+
+#stampedVideo {
+  max-height: 80vh;
+}
   
 .like-button {
   background-color: transparent;
@@ -573,6 +581,7 @@ color: #4F792A;
   color: var(--light-green);
 }
 
+
 .custom-file-upload {
   display: inline-block;
   padding: 6px 12px;
@@ -582,7 +591,6 @@ color: #4F792A;
   border: none;
   text-align: center;
 }
-
 input[type="file"] {
   display: none;
 }
