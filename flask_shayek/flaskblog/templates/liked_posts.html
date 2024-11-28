@@ -2,12 +2,70 @@
 
 {% block content %}
 <script>
-    function goBack() {
+     function goBack() {
         const referrer = document.referrer; 
         const myProfileUrl = "{{ url_for('profile') }}"; 
             window.location.href = myProfileUrl;
         }
     
+    
+     let undoTimeouts = new Map();
+    
+     function toggleLike(button) {
+        const postId = button.getAttribute('data-post-id');
+        const isLiked = button.querySelector('i').classList.contains('liked-heart');
+        const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
+    
+        fetch(url, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (isLiked) {
+                    button.querySelector('i').classList.remove('fas', 'liked-heart');
+                    button.querySelector('i').classList.add('far');
+    
+                    const article = button.closest('article');
+                    const nextSibling = article.nextElementSibling;
+    
+                    if (undoTimeouts.has(postId)) {
+                        clearTimeout(undoTimeouts.get(postId));
+                    }
+    
+                    const timeout = setTimeout(() => {
+                        if (nextSibling && nextSibling.tagName === 'HR') {
+                            nextSibling.remove(); 
+                        }
+                        article.remove(); 
+                        undoTimeouts.delete(postId);
+                    }, 3000);
+    
+                    undoTimeouts.set(postId, timeout);
+                } else {
+                    if (undoTimeouts.has(postId)) {
+                        clearTimeout(undoTimeouts.get(postId));
+                        undoTimeouts.delete(postId);
+                    }
+                    button.querySelector('i').classList.remove('far');
+                    button.querySelector('i').classList.add('fas', 'liked-heart');
+                }
+                button.querySelector('span').textContent = data.likes;
+            } else {
+                console.error(data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+     }
+    
+     document.addEventListener("DOMContentLoaded", function () {
+      const scrollPosition = sessionStorage.getItem("scrollPosition");
+      if (scrollPosition) {
+         window.scrollTo(0, parseInt(scrollPosition));
+         sessionStorage.removeItem("scrollPosition");
+         }
+         window.addEventListener("beforeunload", function () {
+         sessionStorage.setItem("scrollPosition", window.scrollY);});});
 </script>
 
 <div class="card mb-4">
@@ -45,45 +103,6 @@
                         </div>    
                 </div>
             </article>
-            <script>
-                function toggleLike(button) {
-                    const postId = button.getAttribute('data-post-id');
-                    const isLiked = button.querySelector('i').classList.contains('liked-heart');
-                    const url = isLiked ? `/unlike_post/${postId}` : `/like_post/${postId}`;
-                
-                    fetch(url, {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            if (isLiked) {
-                                
-                                button.querySelector('i').classList.remove('fas', 'liked-heart');
-                                button.querySelector('i').classList.add('far');
-                            } else {
-                                
-                                button.querySelector('i').classList.remove('far');
-                                button.querySelector('i').classList.add('fas', 'liked-heart');
-                            }
-                            button.querySelector('span').textContent = data.likes;
-                        } else {
-                            console.error(data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-                }
-                document.addEventListener("DOMContentLoaded", function () {
-                const scrollPosition = sessionStorage.getItem("scrollPosition");
-                if (scrollPosition) {
-                    window.scrollTo(0, parseInt(scrollPosition));
-                    sessionStorage.removeItem("scrollPosition");
-                }
-                window.addEventListener("beforeunload", function () {
-                    sessionStorage.setItem("scrollPosition", window.scrollY);
-                });
-            });
-            </script>
             {% if not loop.last %}
                 <hr>
             {% endif %}
