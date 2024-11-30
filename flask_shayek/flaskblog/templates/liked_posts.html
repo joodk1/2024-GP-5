@@ -71,7 +71,7 @@
 <div class="card mb-4">
     <div class="card-header">
         <button onclick="goBack()" class="btn form-buttons">&#8592; عودة </button>
-        <h4>كل المنشورات المعجب بها</h4>
+        <h4>جميع المنشورات المعجب بها</h4>
     </div>
     <div class="card-body">
         {% for post in liked_posts|sort(attribute='parsed_timestamp', reverse=True) %}

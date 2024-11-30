@@ -3,64 +3,107 @@
 {% block content %}
 
     
-    {% for post in posts %}
-        <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata text-right">
-                    {% if post.author %}
-                        <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                    {% endif %}
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
-                <br>
-                <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
-                    <h3 class="article-title">{{ post.title }}</h3>
-                <p class="article-content">{{ post.content }}
-                    {% if post.media %}
-                    {% set file_ext = post.media.split('.')[-1].lower() %}
-                    {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                        <video class="post-video" controls>
-                            {% if file_ext == 'mp4' %}
-                                <source src="{{ post.media }}" type="video/mp4">
-                            {% elif file_ext == 'webm' %}
-                                <source src="{{ post.media }}" type="video/webm">
-                            {% elif file_ext == 'ogg' %}
-                                <source src="{{ post.media }}" type="video/ogg">
-                            {% elif file_ext == 'mov' %}
-                                <source src="{{ post.media }}" type="video/quicktime">
-                            {% endif %}
-                        </video>
-                    {% else %}
-                        <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                    {% endif %}
+{% for post in posts %}
+    <article class="media content-section" style="display: {% if loop.index > 10 %}none{% else %}block{% endif %};" class="post">
+        <div class="media-body">
+            <div class="article-metadata text-right">
+                {% if post.author %}
+                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
                 {% endif %}
-            </p>
-        </a>
+                <small class="text-muted">{{ post.timestamp }}</small>
+            </div> 
+            <br>
+            <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;">
+                <h3 class="article-title">{{ post.title }}</h3>
+                <p class="article-content">
+                    {{ post.content[:750] }}{% if post.content|length > 750 %}...{% endif %}
+                    {% if post.content|length > 750 %}
+                        <a href="{{ url_for('post', post_id=post.post_id) }}" class="read-more-link">اقرأ المزيد</a>
+                    {% endif %}
+                    {% if post.media %}
+                        {% set file_ext = post.media.split('.')[-1].lower() %}
+                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                            <video class="post-video" controls>
+                                {% if file_ext == 'mp4' %}
+                                    <source src="{{ post.media }}" type="video/mp4">
+                                {% elif file_ext == 'webm' %}
+                                    <source src="{{ post.media }}" type="video/webm">
+                                {% elif file_ext == 'ogg' %}
+                                    <source src="{{ post.media }}" type="video/ogg">
+                                {% elif file_ext == 'mov' %}
+                                    <source src="{{ post.media }}" type="video/quicktime">
+                                {% endif %}
+                            </video>
+                        {% else %}
+                            <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                        {% endif %}
+                    {% endif %}
+                </p>
+            </a>
+            <div class="post-comments">
+                <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                    <i class="far fa-comment"></i>
+                    <span>{{ post.count }}</span>
+                </button>
+        
+                <div style="margin-left: 5px;"></div>
+                <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >
+                    <i class="far fa-heart 
+                        {% if current_user.get_id() in post.liked_by %} 
+                            fas liked-heart 
+                        {% endif %}">
+                    </i> 
+                    <span>{{ post.likes }}</span>
+                </button>
+            </div>       
+        </div>    
+    </article>
+    <script>
+            let currentVisibleCount = 10;
+        const posts = document.querySelectorAll('.media.content-section');
+        const showMoreButton = document.getElementById('show-more');
+        const totalPosts = {{ total_posts }};
+        const currentPostsCount = {{ posts|length }};
 
-        <div class="post-comments">
-            <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                <i class="far fa-comment"></i>
-                <span>{{ post.count }}</span> </button>
-     
-            <div style="margin-left: 5px;"></div>
-            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="toggleLike(this)" >
-                <i class="far fa-heart 
-                    {% if current_user.get_id() in post.liked_by %} 
-                        fas liked-heart 
-                    {% endif %}"></i> 
-                <span>{{ post.likes }}</span>
-            </button>
-        </div>
-           
-            </div>
-        
-        </article>
-        
-        <script>
-            function toggleLike(button) {
-                alert('يرجى تسجيل الدخول أولاً!');
-                return; 
+        document.addEventListener('DOMContentLoaded', function () {
+            const showMoreButton = document.getElementById('show-more');
+            const posts = document.querySelectorAll('.media.content-section');
+
+            for (let i = 10; i < posts.length; i++) {
+                posts[i].style.display = 'none';
             }
-        </script>
-    {% endfor %}
+
+            if (posts.length > 10) {
+                showMoreButton.style.display = 'block';
+            } else {
+                showMoreButton.style.display = 'none';
+            }
+        });
+
+        function showMore() {
+            let currentVisibleCount = 10;
+            const posts = document.querySelectorAll('.media.content-section');
+            const showMoreButton = document.getElementById('show-more');
+
+            const nextCount = currentVisibleCount + 10;
+            for (let i = currentVisibleCount; i < nextCount && i < posts.length; i++) {
+                posts[i].style.display = 'block';
+            }
+
+            currentVisibleCount = nextCount;
+
+            if (currentVisibleCount >= posts.length) {
+                showMoreButton.style.display = 'none';
+            }
+        }
+
+        function toggleLike(button) {
+            alert('يرجى تسجيل الدخول أولاً!');
+            return; 
+        }
+    </script>
+{% endfor %}
+<div class="text-center mt-3">
+    <button id="show-more" class="btn btn-primary" onclick="showMore()">عرض المزيد</button>
+</div>
 {% endblock %}

@@ -45,12 +45,12 @@
                     <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
                     <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
                     {% if session['logged_in'] == True %}
-                        <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
                         <a class="nav-item nav-link" href="{{ url_for('home') }}" onclick="goToHome()">الرئيسية</a>
+                        <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
                         <!-- Notifications-->
                         <div class="nav-item dropdown" id="notificationsDropdown">
                             <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-bell"></i>
+                                الإشعارات
                                 {% if unread_count > 0 %}
                                     <span class="badge badge-danger notification-count position-absolute" style="top: 12px; right: 15px;">{{ unread_count }}</span>
                                 {% endif %}
@@ -106,7 +106,7 @@
 
     <footer class="footer mt-auto py-3">
         <div class="container text-center" style="direction: rtl;">
-            <span>تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
+            <span>للاستفارات والاقتراحات، تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
         </div>
     </footer>
 

@@ -26,24 +26,26 @@ from PIL import Image
 from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('C:\\Users\\almah\\Documents\\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 firebase_database = db.reference()
+
 detector = dlib.get_frontal_face_detector()
 
-# Loading the pre-trained model
-model_path = 'C:\\Users\\almah\\Documents\\2024-GP-5\\flask_shayek\\ResNet50_Model_Web.h5'
-model = load_model(model_path)
+# Loading both models
+def get_model_paths():
+    current_dir = os.path.dirname(__file__)
+    deepfake_model_path = os.path.join(current_dir, 'ResNet50_Model_DF.h5')
+    faceswap_model_path = os.path.join(current_dir, 'ResNet50_Model_FS.h5')
+    return deepfake_model_path, faceswap_model_path
 
-def get_model_path():
-   current_dir = os.path.dirname(_file_)
-   return os.path.join(current_dir, 'ResNet50_Model_Web.h5')
-
-model = load_model(get_model_path())
-
+deepfake_model_path, faceswap_model_path = get_model_paths()
+deepfake_model = load_model(deepfake_model_path)
+faceswap_model = load_model(faceswap_model_path)
+    
 UPLOAD_FOLDER = 'uploads'
 STAMPED_FOLDER = 'flaskblog/static/stamped/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -139,7 +141,6 @@ def fetch_posts_by_user(user_email):
 
     return posts
 
-
 def encode_email(email):
     return email.replace('.', 'dot').replace('@', 'at')
 
@@ -147,7 +148,8 @@ def encode_email(email):
 @app.route('/homepage')
 def homepage():
     posts = fetch_posts()
-    return render_template('homepage.html', posts=posts)
+    total_posts = len(posts)
+    return render_template('homepage.html', posts=posts, total_posts=total_posts)
 
 @app.route('/about')
 def about():
@@ -191,8 +193,8 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
     cap.release()
     return np.array(processed_frames)
 
-@app.route('/shayekModel',methods=['GET','POST'])
-def shayekModel():  
+@app.route('/shayekModel', methods=['GET', 'POST'])
+def shayekModel():
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -201,24 +203,32 @@ def shayekModel():
                 os.makedirs(upload_folder, exist_ok=True)
                 video_path = os.path.join(upload_folder, video.filename)
                 video.save(video_path)
+                
                 processed_frames = extract_and_preprocess_frames(video_path)
                 if processed_frames.size == 0:
                     os.remove(video_path)
                     return jsonify({'error': 'لم نستطع إيجاد وجوه ', 'code': 0})
                 processed_frames = np.expand_dims(processed_frames, axis=0)
-                pred = model.predict(processed_frames)[0][0]
-                if pred <= 0.5:
-                    pred_label = 'الفيديو حقيقي'
-                    code = 1
-                else:
+
+                # Making predictions using both models:
+                deepfake_pred = deepfake_model.predict(processed_frames)[0][0]
+                faceswap_pred = faceswap_model.predict(processed_frames)[0][0]
+
+                # If either model predicts as manipulated, classify as so
+                if deepfake_pred > 0.5 or faceswap_pred > 0.5:
                     pred_label = 'الفيديو معدل'
                     code = 2
+                else:
+                    pred_label = 'الفيديو حقيقي'
+                    code = 1
+
+                os.remove(video_path)
+
                 return jsonify({'result': pred_label, 'code': code})
             return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف', 'code': 0})
 
     return render_template('shayekModel.html', title='نشيّك؟', code=1)
 
-    
 @app.route('/delete_video', methods=['POST'])
 def delete_video():
 
@@ -235,25 +245,6 @@ def delete_video():
             return jsonify({'error': 'Video not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/upload_video', methods=['GET','POST'])
-def upload_video(): 
-    if request.files:
-        video = request.files['video']
-        if video.filename != '':
-            upload_folder = 'uploads'
-            os.makedirs(upload_folder, exist_ok=True)
-            video_path = os.path.join(upload_folder, video.filename)
-            video.save(video_path)
-            processed_frames = extract_and_preprocess_frames(video_path)
-            if processed_frames.size == 0:
-                return jsonify({'error': 'No faces detected or video is corrupted'})
-            processed_frames = np.expand_dims(processed_frames, axis=0)
-            pred = model.predict(processed_frames)[0][0]
-            pred_label = 'الفيديو حقيقي' if pred <= 0.5 else 'الفيديو معدل'
-            return jsonify({'result': pred_label, 'video_path': video_path})
-            return jsonify({'result': 'nothing', 'video_path': video_path})
-    return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
 
 @app.route('/video_stamp', methods=['POST'])
 def video_stamp():
@@ -345,9 +336,7 @@ def video_stamp():
 
     except Exception as e:
         return jsonify({"error": f"خطأ أثناء ختم الفيديو: {str(e)}"}), 500
-
-
-
+    
 @app.route('/home', methods=['GET'])
 @login_required
 def home():
@@ -376,8 +365,9 @@ def home():
                             posts.extend(user_posts)
                 else:
                     posts = fetch_posts()
-
-                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username,  filter=filter_option)
+                total_posts = len(posts)
+                print(total_posts)
+                return render_template('newsoutlet_home.html', posts=posts, user=user_data, username=username, filter=filter_option, total_posts=total_posts)
 
             else: 
                 member_ref = db.reference('members').order_by_child('email').equal_to(user_email).get()
@@ -395,8 +385,8 @@ def home():
                                 posts.extend(user_posts)
                     else:
                         posts = fetch_posts()
-                    
-                    return render_template('member_home.html', posts=posts, user=user_data, username=username, filter=filter_option)
+                    total_posts = len(posts)
+                    return render_template('member_home.html', posts=posts, user=user_data, username=username, filter=filter_option, total_posts=total_posts)
 
                 else:
                     flash('<i class="fas fa-times-circle me-3"></i> المستخدم غير موجود', 'danger')
@@ -1450,16 +1440,25 @@ def delete_comment(post_id, comment_id):
         flash('<i class="fas fa-times-circle me-3"></i> محاولة دخول غير مصرح بها', 'danger')
         return redirect(url_for('newsoutlet_login'))
 
-    comment_ref = db.reference(f'posts/{post_id}/comment/{comment_id}').get()
-    if not comment_ref:
+    comment_ref = db.reference(f'posts/{post_id}/comment/{comment_id}')
+    comment_data = comment_ref.get()
+
+    if not comment_data:
         flash('<i class="fas fa-times-circle me-3"></i> التعليق غير موجود', 'danger')
         return redirect(url_for('post', post_id=post_id))
 
-    if comment_ref['author_email'] != user_email:
+    post_ref = db.reference(f'posts/{post_id}')
+    post_data = post_ref.get()
+
+    if not post_data:
+        flash('<i class="fas fa-times-circle me-3"></i> النشرة غير موجودة', 'danger')
+        return redirect(url_for('home'))
+
+    if comment_data['author_email'] != user_email and post_data['author_email'] != user_email:
         flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا التعليق', 'danger')
         return redirect(url_for('post', post_id=post_id))
 
-    db.reference(f'posts/{post_id}/comment/{comment_id}').delete()
+    comment_ref.delete()
     flash('<i class="fas fa-check-circle me-3" style="color: green;"></i> تم حذف التعليق بنجاح', 'success')
 
     return redirect(url_for('post', post_id=post_id))
@@ -1480,7 +1479,14 @@ def delete_reply(post_id, comment_id, reply_id):
         flash('<i class="fas fa-times-circle me-3"></i> الرد غير موجود', 'danger')
         return redirect(url_for('post', post_id=post_id))
 
-    if reply_data['author_email'] != user_email:
+    post_ref = db.reference(f'posts/{post_id}')
+    post_data = post_ref.get()
+
+    if not post_data:
+        flash('<i class="fas fa-times-circle me-3"></i> النشرة غير موجودة', 'danger')
+        return redirect(url_for('home'))
+
+    if reply_data['author_email'] != user_email and post_data['author_email'] != user_email:
         flash('<i class="fas fa-times-circle me-3"></i> ليس لديك إذن لحذف هذا الرد', 'danger')
         return redirect(url_for('post', post_id=post_id))
 

@@ -51,17 +51,22 @@
 
 
     function confirmDelete(deleteUrl) {
-        console.log(deleteUrl)
         if (confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = deleteUrl;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            form.appendChild(csrfInput);
+
             document.body.appendChild(form);
             form.submit();
         } else {
-            return false; 
+            return false;
         }
-    }   
+    }
 
     function toggleLike(button) {
         if (!isAuthenticated) {
@@ -189,23 +194,24 @@
                     <small>{{ comment.timestamp }}</small>
                 </div>
                 <p>{{ comment.body }}</p>
-        
+
                 {% if current_user.is_authenticated %}
                     <button class="btn btn-primary" onclick="toggleReplyForm('{{ comment.comment_id }}', '{{ comment.author }}')">رد</button>
                 {% endif %}
-        
-                {% if comment.author_email == current_user.get_id() %}
+    
+                {% if post.author_email == current_user.email or comment.author_email == current_user.email %}
                     <form action="{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST" style="display:inline;">
-                        <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_comment', post_id=post.post_id, comment_id=comment.comment_id) }}')">حذف</button>
-                    </form>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')">حذف</button>
+                    </form>                
                 {% endif %}
-        
+    
                 <div class="reply-form" id="reply-form-{{ comment.comment_id }}" style="display:none;">
                     <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST">
                         <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
                         <button class="btn btn-primary" type="submit">أضف الرد</button>
                     </form>
                 </div>
+    
                 {% if comment.replies %}
                     <ul class="reply-list" id="replies-{{ comment.comment_id }}" style="display:none;">
                         {% for reply in comment.replies %}
@@ -215,28 +221,20 @@
                                     <small>{{ reply.timestamp }}</small>
                                 </div>
                                 <p>{{ reply.body }}</p>
-                
+                                
                                 {% if current_user.is_authenticated %}
                                     <button class="btn btn-primary" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
                                 {% endif %}
-                
-                                {% if reply.author_email == current_user.get_id() %}
+                                
+                                {% if reply.author_email == current_user.get_id() or (current_user.role == 'news_outlet' and post.author_email == current_user.get_id()) %}
                                     <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
-                                        <button type="button" class="btn btn-primary" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
+                                        <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
                                     </form>
                                 {% endif %}
-                
-                                <div class="reply-form" id="reply-form-{{ reply.reply_id }}" style="display:none;">
-                                    <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id, parent_reply_id=reply.reply_id) }}" method="POST">
-                                        <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
-                                        <input type="hidden" name="parent_reply_id" value="{{ reply.reply_id }}">
-                                        <button class="btn btn-primary" type="submit">أضف الرد</button>
-                                    </form>
-                                </div>
                             </li>
                         {% endfor %}
                     </ul>
-                <button class="btn btn-primary mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
+                    <button class="btn btn-primary mt-2" onclick="toggleReplies('{{ comment.comment_id }}')">إظهار الردود</button>
                 {% endif %}
             </li><hr>
         {% endfor %}

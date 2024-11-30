@@ -14,9 +14,9 @@
                     <div class="disclaimer">
                         <p>يرجى التأكد من التالي قبل رفع الفيديو: <br>
                             <ul style="direction: rtl; text-align: right;">
-                                <li>يجب أن يكون الفيديو بصيغة .mp4</li>
-                                <li>سيتم التحقق من المقاطع المعدلة باستخدام طريقة الـ Deepfake فقط</li>
+                                <li>يجب أن يكون الفيديو بصيغة mp4</li>
                                 <li>يجب ألا تقل مدة الفيديو عن ٤ ثواني</li>
+                                <li>سيتم التحقق من التعديل بتقنيتي الـ Deepfake والـ FaceSwap فقط</li>
                             </ul>
                         </p>
                         <hr>
@@ -76,10 +76,8 @@
                                     </video>
                                 </div>
                                 <div class="modal-footer">
-                                <button type="button" id="closeStampModal" class="btn btn-secondary ml-auto">إغلاق</button>
-                                <button type="button" id="ShareButton" class="btn btn-primary" >نشر الفيديو</button>
-                                
-
+                                    <button type="button" id="closeStampModal" class="btn btn-secondary ml-auto">إغلاق</button>
+                                    <button type="button" id="ShareButton" class="btn btn-primary" >مشاركة الفيديو</button>
                                 </div>
                             </div>
                         </div>
@@ -137,7 +135,6 @@
                             xhr.send(formData);
                         });
 
-                        
                         function startStamp(code) {
                             document.getElementById('stampLoading').style.display = 'block'; 
                             const formData = new FormData(document.getElementById('videoForm'));

@@ -55,6 +55,44 @@
 </div>
     
 <script>
+    let currentVisibleCount = 10;
+    const posts = document.querySelectorAll('.media.content-section');
+    const showMoreButton = document.getElementById('show-more');
+    const totalPosts = {{ total_posts }};
+    const currentPostsCount = {{ posts|length }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const showMoreButton = document.getElementById('show-more');
+        const posts = document.querySelectorAll('.media.content-section');
+
+        for (let i = 10; i < posts.length; i++) {
+            posts[i].style.display = 'none';
+        }
+
+        if (posts.length > 10) {
+            showMoreButton.style.display = 'block';
+        } else {
+            showMoreButton.style.display = 'none';
+        }
+    });
+
+    function showMore() {
+        let currentVisibleCount = 10;
+        const posts = document.querySelectorAll('.media.content-section');
+        const showMoreButton = document.getElementById('show-more');
+
+        const nextCount = currentVisibleCount + 10;
+        for (let i = currentVisibleCount; i < nextCount && i < posts.length; i++) {
+            posts[i].style.display = 'block';
+        }
+
+        currentVisibleCount = nextCount;
+
+        if (currentVisibleCount >= posts.length) {
+            showMoreButton.style.display = 'none';
+        }
+    }
+
     const feedUrl = "{{ url_for('home', filter=filter) }}";
     document.addEventListener('DOMContentLoaded', function () {
         const buttons = document.querySelectorAll('.post-filter-btn');
@@ -77,22 +115,24 @@
         sessionStorage.removeItem('scrollPosition'); 
     }
     buttons.forEach(button => {
-    button.addEventListener('click', function() {
-        const selectedFilter = this.dataset.filter;
-        storeFilter(selectedFilter); });});
+        button.addEventListener('click', function() {
+            const selectedFilter = this.dataset.filter;
+            storeFilter(selectedFilter);
+        });
+    });
 
         function storeScrollPosition() {
-    sessionStorage.setItem('scrollPosition', window.scrollY);
-}
-function storeFilter(filter) {
-sessionStorage.setItem('filter', filter);}
-window.location.href = "{{ url_for('home', filter='') }}" + filter;});
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    }
 
+    function storeFilter(filter) {
+    sessionStorage.setItem('filter', filter);
+    }
 
-window.addEventListener('beforeunload', function () {
-    sessionStorage.setItem('scrollPosition', window.scrollY);
-});
-
+    window.location.href = "{{ url_for('home', filter='') }}" + filter;});
+    window.addEventListener('beforeunload', function () {
+        sessionStorage.setItem('scrollPosition', window.scrollY);
+    });
 
     function toggleLike(button) {
         const postId = button.getAttribute('data-post-id');
@@ -125,7 +165,7 @@ window.addEventListener('beforeunload', function () {
 
 {% if posts %}
     {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}
-        <article class="media content-section">
+    <article class="media content-section" style="display: {% if loop.index > 10 %}none{% else %}block{% endif %};" class="post">
             <div class="media-body">
                 <div class="article-metadata text-right">
                     {% if post.author %}
@@ -150,7 +190,11 @@ window.addEventListener('beforeunload', function () {
                 <br>
                 <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
                     <h3 class="article-title">{{ post.title }}</h3>
-                    <p class="article-content">{{ post.content }}
+                    <p class="article-content">
+                        {{ post.content[:750] }}{% if post.content|length > 750 %}...{% endif %}
+                        {% if post.content|length > 750 %}
+                            <a href="{{ url_for('post', post_id=post.post_id) }}" class="read-more-link">اقرأ المزيد</a>
+                        {% endif %}
                         {% if post.media %}
                             {% set file_ext = post.media.split('.')[-1].lower() %}
                             {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
@@ -227,6 +271,9 @@ window.addEventListener('beforeunload', function () {
             });
         </script>
     {% endfor %}
+    <div class="text-center mt-3">
+        <button id="show-more" class="btn btn-primary" onclick="showMore()">عرض المزيد</button>
+    </div>
 {% else %}
     {% if filter == 'followed' %}
     <div class="alert alert-info text-center mt-4">

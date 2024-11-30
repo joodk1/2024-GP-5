@@ -58,6 +58,15 @@
                     {% else %}  
                         {{ form.password(class="form-control form-control-lg text-right") }}      
                     {% endif %}
+                    <small class="form-text text-muted text-right">
+                        <ul id="password-rules">
+                            <li id="rule-length">يجب أن يكون طول كلمة المرور ٨ رموز على الأقل</li>
+                            <li id="rule-uppercase">يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل</li>
+                            <li id="rule-lowercase">يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل</li>
+                            <li id="rule-number">يجب أن تحتوي كلمة المرور على رقم واحد على الأقل</li>
+                            <li id="rule-symbol">يجب أن تحتوي كلمة المرور على رمز واحد على الأقل</li>
+                        </ul>
+                    </small>
                 </div>
                 <div class="form-group">
                     {{ form.confirmPassword.label(class="form-control-label") }}
@@ -87,6 +96,26 @@
                     this.classList.add('green-button');
                     sessionStorage.setItem('selectedRegistrationOption', this.getAttribute('data-filter'));
                 });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordField = document.querySelector('#{{ form.password.id }}');
+            const rules = {
+                length: document.getElementById('rule-length'),
+                uppercase: document.getElementById('rule-uppercase'),
+                lowercase: document.getElementById('rule-lowercase'),
+                number: document.getElementById('rule-number'),
+                symbol: document.getElementById('rule-symbol')
+            };
+
+            passwordField.addEventListener('input', function () {
+                const password = passwordField.value;
+                rules.length.classList.toggle('text-success', password.length >= 8);
+                rules.uppercase.classList.toggle('text-success', /[A-Z]/.test(password));
+                rules.lowercase.classList.toggle('text-success', /[a-z]/.test(password));
+                rules.number.classList.toggle('text-success', /[0-9]/.test(password));
+                rules.symbol.classList.toggle('text-success', /[!@#$%^&*(),.?":{}|<>]/.test(password));
             });
         });
     </script>
