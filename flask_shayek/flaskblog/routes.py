@@ -904,6 +904,18 @@ def upload_file_to_firebase_storage(file):
         blob.make_public()
         return f"gs://shayek-560ec.appspot.com/company_docs/{filename}"
 
+@app.route('/upload_video', methods=['GET','POST'])
+def upload_video(): 
+    if request.files:
+        video = request.files['video']
+        if video.filename != '':
+            upload_folder = 'uploads'
+            os.makedirs(upload_folder, exist_ok=True)
+            video_path = os.path.join(upload_folder, video.filename)
+            video.save(video_path)
+            return jsonify({'result': 'nothing', 'video_path': video_path})
+    return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف'})
+
 @app.route('/submit_post', methods=['POST'])
 @login_required
 def submit_post():
