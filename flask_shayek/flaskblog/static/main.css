@@ -189,7 +189,7 @@ a.article-title:hover {
   100% { transform: rotate(360deg); }
 }
 
-#result {
+#verificationResult {
   font-weight: bold;
   color: var(--dark-green);
   background-color: white;
@@ -625,4 +625,38 @@ input[type="file"] {
   text-align: center;
   align-items: center;
   background: white;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center; 
+  position: relative; 
+}
+
+#stampButtonModal {
+  display: inline-block;
+  margin-bottom: 0; 
+}
+
+#closeStampModal {
+  margin-left: 0; 
+  margin-right: 285px;
+  
+}
+#closeVerificationModal{
+  margin-left: 0;
+  margin-right: 285px;
+}
+#stampLoading {
+  display: none; 
+  position: relative; 
+  left: 45%;
+  transform: translate(-50%, -50%); 
+  border: 8px solid #f3f3f3; 
+  border-top: 8px solid var(--dark-green); 
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite; 
 }
