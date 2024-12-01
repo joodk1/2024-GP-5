@@ -231,19 +231,42 @@ def shayekModel():
 
 @app.route('/delete_video', methods=['POST'])
 def delete_video():
-
     video_path = request.json.get('video_path')
     if not video_path:
         return jsonify({'error': 'No video path provided'}), 400
 
     try:
+        upload_path = os.path.join(UPLOAD_FOLDER, video_path)
         stamped_path = os.path.join(STAMPED_FOLDER, video_path)
-        if os.path.exists(stamped_path):
+
+        if os.path.exists(upload_path):
+            os.remove(upload_path)
+            return jsonify({'success': 'تم حذف الفيديو المرفق بنجاح'})
+        elif os.path.exists(stamped_path):
             os.remove(stamped_path)
-            return jsonify({'success': 'Video deleted successfully'})
+            return jsonify({'success': 'تم حذف الفيديو المختوم بنجاح'})
         else:
-            return jsonify({'error': 'Video not found'}), 404
+            return jsonify({'error': 'لم يتم ايجاد الفيديو'}), 404
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_uploaded_video', methods=['POST'])
+def delete_uploaded_video():
+    video_path = request.json.get('video_path')
+
+    if not video_path:
+        return jsonify({'error': 'No video path provided'}), 400
+
+    try:
+        upload_path = os.path.join(UPLOAD_FOLDER, video_path)
+        
+        if os.path.exists(upload_path):
+            os.remove(upload_path)
+            return jsonify({'success': 'تم حذف الفيديو المرفق بنجاح'})
+        else:
+            return jsonify({'error': 'لم يتم ايجاد الملف المرفق'}), 404
+    except Exception as e:
+        print(f"Error deleting uploaded video: {str(e)}")  
         return jsonify({'error': str(e)}), 500
 
 @app.route('/video_stamp', methods=['POST'])

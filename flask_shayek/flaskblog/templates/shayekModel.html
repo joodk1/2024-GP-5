@@ -165,10 +165,46 @@
                         }
 
                         document.getElementById("closeVerificationModal").addEventListener("click", function() {
+                            const videoSource = document.getElementById("videoSource");
+                            const uploadedFileName = document.getElementById('fileName').innerText; 
+
+                            if (uploadedFileName) {
+                               fetch('/delete_uploaded_video', {
+                                 method: 'POST',
+                                 headers: {'Content-Type': 'application/json',},
+                                 body: JSON.stringify({ video_path: uploadedFileName }), 
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        console.log("Uploaded video deleted successfully.");
+                                    } else {
+                                        console.error("Error deleting uploaded video:", data.error);}})
+                                .catch(error => console.error("Error:", error));}
+    
+
                             $('#verificationModal').modal('hide');
                         });
 
                         document.getElementById("closeStampModal").addEventListener("click", function() {
+                            const stampedVideoSource = document.getElementById("stampedVideoSource");
+                            const stampedVideoPath = stampedVideoSource.src.split('/').pop(); 
+
+                            fetch('/delete_video', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json',},
+                                body: JSON.stringify({ video_path: stampedVideoPath }),
+                             })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        console.log("Stamped video deleted successfully.");
+                                    } else {
+                                        console.error("Error deleting stamped video:", data.error);
+                                    }
+                                 })
+                                 .catch(error => console.error("Error:", error));
+
                             $('#stampModal').modal('hide');
                         });
                     </script>
