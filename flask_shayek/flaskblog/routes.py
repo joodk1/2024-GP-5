@@ -187,14 +187,19 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
             blank_frame_count += 1 
             
             if blank_frame_count > max_blank_frames:
-                print("No faces detected for too long. Stopping processing.")
+                global global_code
+                global_code = 0
                 break
 
     cap.release()
     return np.array(processed_frames)
 
+global_code = None
+
 @app.route('/shayekModel', methods=['GET', 'POST'])
 def shayekModel():
+    global global_code
+    
     if request.method == 'POST':
         if request.files:
             video = request.files['video']
@@ -205,9 +210,9 @@ def shayekModel():
                 video.save(video_path)
                 
                 processed_frames = extract_and_preprocess_frames(video_path)
-                if processed_frames.size == 0:
-                    os.remove(video_path)
-                    return jsonify({'error': 'لم نستطع إيجاد وجوه ', 'code': 0})
+                if len(processed_frames) <= 5:
+                    global_code = 0
+                    return jsonify({'error': 'لم نجد أي أوجه في الفيديو المرفق', 'code': 0, 'video_path': video.filename})
                 processed_frames = np.expand_dims(processed_frames, axis=0)
 
                 # Making predictions using both models:
@@ -215,19 +220,20 @@ def shayekModel():
                 faceswap_pred = faceswap_model.predict(processed_frames)[0][0]
 
                 # If either model predicts as manipulated, classify as so
-                if deepfake_pred > 0.5 or faceswap_pred > 0.5:
+                if deepfake_pred >= 0.5 or faceswap_pred >= 0.5:
                     pred_label = 'الفيديو معدل'
-                    code = 2
-                else:
+                    global_code = 2 
+                elif deepfake_pred < 0.5 and faceswap_pred < 0.5:
                     pred_label = 'الفيديو حقيقي'
-                    code = 1
-
+                    global_code = 1  
+                else:
+                    global_code = 0    
+                
                 os.remove(video_path)
-
-                return jsonify({'result': pred_label, 'code': code})
+                return jsonify({'result': pred_label, 'code': global_code})
             return jsonify({'error': 'لم يتم إرفاق ملف أو الملف المرفق تالف', 'code': 0})
 
-    return render_template('shayekModel.html', title='نشيّك؟', code=1)
+    return render_template('shayekModel.html', title='نشيّك؟', code=global_code)
 
 @app.route('/delete_video', methods=['POST'])
 def delete_video():
@@ -271,6 +277,8 @@ def delete_uploaded_video():
 
 @app.route('/video_stamp', methods=['POST'])
 def video_stamp():
+    global global_code
+    
     if 'video' not in request.files:
         return jsonify({"error": "لم يتم رفع الفيديو"}), 400
 
@@ -279,18 +287,18 @@ def video_stamp():
     if not video_file.filename.endswith('.mp4'):
         return jsonify({"error": "ملف الفيديو يجب أن يكون بصيغة .mp4"}), 400
 
-    code = request.form.get('code', type=int)
-
     video_path = os.path.join(UPLOAD_FOLDER, video_file.filename)
     video_file.save(video_path)
-
-    if code == 1:
+    print(global_code)
+    
+    if global_code == 1:
         stamp_image_path = 'flaskblog/static/images/true.png'
-    elif code == 2:
+    elif global_code == 2:
         stamp_image_path = 'flaskblog/static/images/false.png'
     else:
-        stamp_image_path = 'flaskblog/static/images/false.png'
-
+        global_code = 0
+        return jsonify({"error": "لم نعثر على صورة الختم"}), 400
+                
     try:
         cap = cv2.VideoCapture(video_path)
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -308,7 +316,7 @@ def video_stamp():
 
         stamp = cv2.imread(stamp_image_path, cv2.IMREAD_UNCHANGED)
         if stamp is None:
-            return jsonify({"error": "لم يتم العثور على صورة الختم"}), 400
+            return jsonify({"error": "لم نعثر على صورة الختم"}), 400
 
         stamp_height = 200
         scale = stamp_height / stamp.shape[0]
@@ -355,7 +363,7 @@ def video_stamp():
         os.remove(stamped_path)
         os.remove(video_path)
 
-        return jsonify({"watermarked_video_path": f"compressed_{stamped_filename}", "code": code}), 200
+        return jsonify({"watermarked_video_path": f"compressed_{stamped_filename}", "code": global_code}), 200
 
     except Exception as e:
         return jsonify({"error": f"خطأ أثناء ختم الفيديو: {str(e)}"}), 500

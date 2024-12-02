@@ -33,7 +33,7 @@ body {
 }
 
 .logo {
-  margin:auto 10px;
+  margin: auto 10px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -52,6 +52,20 @@ p {
 
 .navbar{
   border-bottom:  1px solid #ddd;
+}
+
+.navbar .navbar-toggler {
+  float: left; 
+}
+
+.navbar-toggler {
+  margin: auto 10px;
+  background-color: var(--dark-green);
+  border: 2px solid #333333;
+}
+
+.navbar-collapse {
+  text-align: right; 
 }
 
 .site-header .navbar-nav .nav-link, a {
@@ -76,7 +90,7 @@ p {
 }
 
 .article-title {
-  color:  var(--dark-green);
+  color: var(--dark-green);
   margin: 4px;
 }
 
@@ -581,7 +595,6 @@ color: #4F792A;
   color: var(--light-green);
 }
 
-
 .custom-file-upload {
   display: inline-block;
   padding: 6px 12px;
@@ -606,7 +619,7 @@ input[type="file"] {
 }
 
 .model-btn {
-  width: 200px;
+  width: 250px;
 }
 
 .card-header{
@@ -640,14 +653,14 @@ input[type="file"] {
 }
 
 #closeStampModal {
-  margin-left: 0; 
-  margin-right: 285px;
-  
+  margin-left: 10;   
 }
+
 #closeVerificationModal{
   margin-left: 0;
   margin-right: 285px;
 }
+
 #stampLoading {
   display: none; 
   position: relative; 
@@ -663,4 +676,9 @@ input[type="file"] {
 
 #password-rules {
   list-style-type: none;
+}
+
+.modal-title {
+    margin: 0 auto;
+    text-align: center;
 }

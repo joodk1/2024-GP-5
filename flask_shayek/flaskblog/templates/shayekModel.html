@@ -2,6 +2,13 @@
 
 {% block content %}
 
+<style>
+    .modal-title {
+        margin: 0 auto;
+        text-align: center;
+    }
+</style>
+
 <div class="container-fluid my-3">
     <div class="row justify-content-center">
         <div class="col-12">
@@ -40,28 +47,28 @@
                         <div class="modal-dialog modal-xl modal-dialog-centered">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="verificationModalLabel">نتيجة التحقق</h5>
-                                    
+                                    <div class="w-100 text-center">
+                                        <h5 class="modal-title" id="stampModalLabel">نتيجة التحقق</h5>
+                                    </div>
                                 </div>
                                 <div class="modal-body position-relative">
                                     <video id="uploadedVideo" width="100%" controls>
                                         <source id="videoSource" src="" type="video/mp4">
-                                        متصفحك لا يدعم مشغل الفيديو.
+                                        متصفحك لا يدعم مشغل الفيديو
                                     </video>
                                     <div id="verificationResult" class="text-center my-3"></div>
                                 </div>
                                 <div class="modal-footer d-flex justify-content-between position-relative">
                                     <button type="button" id="closeVerificationModal" class="btn btn-secondary ml-auto">إغلاق</button>
                                     <button type="button" id="stampButtonModal" class="btn btn-primary" style="display: none;">ختم الفيديو</button>
-
+                    
                                     <div id="stampLoading" class="position-absolute text-center" style="display: none;">
                                         <div class="spinner-border spinner-border-lg" role="status"></div>
                                     </div>
-                                    
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div>                    
 
                     <div id="stampModal" class="modal fade" tabindex="-1" aria-labelledby="stampModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -72,16 +79,17 @@
                                 <div class="modal-body">
                                     <video id="stampedVideo" width="100%" controls>
                                         <source id="stampedVideoSource" src="" type="video/mp4">
-                                        متصفحك لا يدعم مشغل الفيديو.
+                                        متصفحك لا يدعم مشغل الفيديو
                                     </video>
+                                    <div id="shareableLink" class="text-center mt-3"></div>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" id="closeStampModal" class="btn btn-secondary ml-auto">إغلاق</button>
-                                    <button type="button" id="ShareButton" class="btn btn-primary" >مشاركة الفيديو</button>
+                                <div class="modal-footer justify-content-between position-relative">
+                                    <button type="button" id="closeStampModal" class="btn btn-secondary">إغلاق</button>
+                                    <button type="button" id="shareVideoButton" class="btn btn-primary" style="display: none;">مشاركة الفيديو</button>
                                 </div>
                             </div>
                         </div>
-                    </div>  
+                    </div>                    
 
                     <script>
                         function showFileName() {
@@ -89,20 +97,29 @@
                             const fileName = fileInput.files[0] ? fileInput.files[0].name : '';
                             document.getElementById('fileName').innerText = fileName;
                         }
-
-                        document.getElementById('videoForm').addEventListener('submit', function(event) {
+                    
+                        document.getElementById('videoForm').addEventListener('submit', function (event) {
                             event.preventDefault();
-                            document.querySelector('.loader').style.display = 'block'; 
+                            document.querySelector('.loader').style.display = 'block';
+
                             const formData = new FormData(this);
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', this.action, true);
 
                             xhr.onload = function () {
-                                document.querySelector('.loader').style.display = 'none'; 
-                                if (this.status === 200) {
+                                document.querySelector('.loader').style.display = 'none';
+
+                                try {
                                     const response = JSON.parse(this.response);
                                     if (response.error) {
+                                        const videoSource = document.getElementById('videoSource');
+                                        const fileInput = document.querySelector('input[name="video"]');
+                                        const videoFile = fileInput.files[0];
+                                        const videoURL = URL.createObjectURL(videoFile);
+                                        document.getElementById('videoSource').src = videoURL;
+                                        document.getElementById('uploadedVideo').load();
                                         document.getElementById('verificationResult').innerText = response.error;
+                                        $('#verificationModal').modal('show');
                                     } else {
                                         const videoSource = document.getElementById('videoSource');
                                         const fileInput = document.querySelector('input[name="video"]');
@@ -122,92 +139,138 @@
 
                                         $('#verificationModal').modal('show');
                                     }
-                                } else {
-                                    document.getElementById('verificationResult').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    document.getElementById('verificationResult').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء المحاولة مجددًا';
                                 }
                             };
 
-                            xhr.onerror = function() {
+                            xhr.onerror = function () {
                                 document.querySelector('.loader').style.display = 'none';
-                                document.getElementById('verificationResult').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء التأكد من الفيديو المرفق والمحاولة مجددًا';
+                                document.getElementById('verificationResult').innerText = 'حدث خطأ أثناء معالجة طلبك، الرجاء المحاولة مجددًا';
                             };
 
                             xhr.send(formData);
                         });
 
+                        document.getElementById('closeVerificationModal').addEventListener('click', function () {
+                            const videoSource = document.getElementById('videoSource').src;
+
+                            // Extract the video file name from the path
+                            const videoPath = videoSource.substring(videoSource.lastIndexOf('/') + 1);
+
+                            // Call the delete endpoint
+                            fetch('/delete_uploaded_video', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ video_path: videoPath }),
+                            })
+                            .then((response) => response.json())
+                            .then((data) => {
+                                console.log(data.success || data.error);
+                            })
+                            .catch((err) => {
+                                console.error('Error deleting video:', err);
+                            });
+
+                            $('#verificationModal').modal('hide');
+                        });
+
                         function startStamp(code) {
-                            document.getElementById('stampLoading').style.display = 'block'; 
+                            document.getElementById('stampLoading').style.display = 'block';
                             const formData = new FormData(document.getElementById('videoForm'));
                             const xhr = new XMLHttpRequest();
                             xhr.open('POST', '/video_stamp', true);
-
+                    
                             xhr.onload = function () {
-                                document.getElementById('stampLoading').style.display = 'none'; 
+                                document.getElementById('stampLoading').style.display = 'none';
                                 if (this.status === 200) {
                                     const response = JSON.parse(this.response);
+                                    const stampedVideoPath = `/static/stamped/${response.watermarked_video_path}`;
+                                    const shareableLink = `${window.location.origin}/static/stamped/${response.watermarked_video_path}`;
+                    
                                     const stampedVideoSource = document.getElementById('stampedVideoSource');
-                                    stampedVideoSource.src = '/static/stamped/' + response.watermarked_video_path.split('/').pop();
-                                    document.getElementById('stampedVideo').load(); 
-
+                                    stampedVideoSource.src = stampedVideoPath;
+                                    document.getElementById('stampedVideo').load();
+                    
+                                    const shareVideoButton = document.getElementById('shareVideoButton');
+                                    shareVideoButton.style.display = 'inline-block';
+                                    shareVideoButton.onclick = function () {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: 'استخدمت نموذج "شيّـك" للتأكد من صحة هذا الفيديو',
+                                                text: 'إليكم رابط الفيديو مع ختم "شيّـك":',
+                                                url: shareableLink,
+                                            }).then(() => {
+                                                console.log('Successfully shared');
+                                            }).catch((error) => {
+                                                console.error('Error sharing:', error);
+                                            });
+                                        } else {
+                                            alert('ميزة المشاركة غير مدعومة في هذا المتصفح.');
+                                        }
+                                    };
+                    
                                     $('#verificationModal').modal('hide');
                                     $('#stampModal').modal('show');
                                 } else {
                                     console.error("Error in stamping process");
                                 }
                             };
-
+                    
                             xhr.onerror = function () {
                                 document.getElementById('stampLoading').style.display = 'none';
                                 console.error('Error in stamping request');
                             };
-
+                    
                             xhr.send(formData);
                         }
-
+                    
                         document.getElementById("closeVerificationModal").addEventListener("click", function() {
-                            const videoSource = document.getElementById("videoSource");
-                            const uploadedFileName = document.getElementById('fileName').innerText; 
-
+                            const uploadedFileName = document.getElementById('fileName').innerText;
+                    
                             if (uploadedFileName) {
-                               fetch('/delete_uploaded_video', {
-                                 method: 'POST',
-                                 headers: {'Content-Type': 'application/json',},
-                                 body: JSON.stringify({ video_path: uploadedFileName }), 
+                                fetch('/delete_uploaded_video', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ video_path: uploadedFileName }),
                                 })
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
                                         console.log("Uploaded video deleted successfully.");
                                     } else {
-                                        console.error("Error deleting uploaded video:", data.error);}})
-                                .catch(error => console.error("Error:", error));}
-    
-
+                                        console.error("Error deleting uploaded video:", data.error);
+                                    }
+                                })
+                                .catch(error => console.error("Error:", error));
+                            }
+                    
                             $('#verificationModal').modal('hide');
                         });
-
+                    
                         document.getElementById("closeStampModal").addEventListener("click", function() {
                             const stampedVideoSource = document.getElementById("stampedVideoSource");
-                            const stampedVideoPath = stampedVideoSource.src.split('/').pop(); 
-
+                            const stampedVideoPath = stampedVideoSource.src.split('/').pop();
+                    
                             fetch('/delete_video', {
                                 method: 'POST',
-                                headers: {'Content-Type': 'application/json',},
+                                headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ video_path: stampedVideoPath }),
-                             })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        console.log("Stamped video deleted successfully.");
-                                    } else {
-                                        console.error("Error deleting stamped video:", data.error);
-                                    }
-                                 })
-                                 .catch(error => console.error("Error:", error));
-
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("Stamped video deleted successfully.");
+                                } else {
+                                    console.error("Error deleting stamped video:", data.error);
+                                }
+                            })
+                            .catch(error => console.error("Error:", error));
+                    
                             $('#stampModal').modal('hide');
                         });
-                    </script>
+                    </script>                                    
                 </div>
             </div>
         </div>
