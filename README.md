@@ -4,7 +4,7 @@ Shayek شيّــك is a website that hosts news outlets with a built-in video D
 
 ## Goal
 The goal behind Shayek is to provide a single platform that brings reliable news outlets together with no distractions,
-<br> and to provide a video deepfake detection model that can limit the spread of misinformation.
+<br> and to provide a video deepfake and faceswap detection model that can limit the spread of disinformation.
 
 ## Technology
 The website is developed using Flask, a Python web framework, for the back-end, with HTML, CSS, and JavaScript handling the front-end.
