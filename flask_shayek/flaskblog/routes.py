@@ -318,7 +318,7 @@ def video_stamp():
         if stamp is None:
             return jsonify({"error": "لم نعثر على صورة الختم"}), 400
 
-        stamp_height = 200
+        stamp_height = 160
         scale = stamp_height / stamp.shape[0]
         stamp_rgb = cv2.resize(stamp, (int(stamp.shape[1] * scale), int(stamp.shape[0] * scale)))
 
