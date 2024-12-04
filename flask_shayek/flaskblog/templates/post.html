@@ -68,6 +68,22 @@
         }
     }
 
+    function confirmDeleteReply(deleteUrl) {
+        if (confirm('هل أنت متأكد أنك تريد حذف هذا الرد؟')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteUrl;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            form.appendChild(csrfInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
     function toggleLike(button) {
         if (!isAuthenticated) {
             alert('يرجى تسجيل الدخول أولاً!');
@@ -83,12 +99,10 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                if (isLiked) {
-                    
+                if (isLiked) {        
                     button.querySelector('i').classList.remove('fas', 'liked-heart');
                     button.querySelector('i').classList.add('far');
                 } else {
-                    
                     button.querySelector('i').classList.remove('far');
                     button.querySelector('i').classList.add('fas', 'liked-heart');
                 }
@@ -204,7 +218,6 @@
                         <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا التعليق؟')">حذف</button>
                     </form>                
                 {% endif %}
-    
                 <div class="reply-form" id="reply-form-{{ comment.comment_id }}" style="display:none;">
                     <form action="{{ url_for('reply_comment', post_id=post.post_id, comment_id=comment.comment_id) }}" method="POST">
                         <textarea name="reply" placeholder="أضف رد" rows="2" required></textarea>
@@ -226,9 +239,9 @@
                                     <button class="btn btn-primary" onclick="toggleReplyForm('{{ reply.reply_id }}', '{{ reply.author }}')">رد</button>
                                 {% endif %}
                                 
-                                {% if reply.author_email == current_user.get_id() or (current_user.role == 'news_outlet' and post.author_email == current_user.get_id()) %}
+                                {% if reply.author_email == current_user.get_id() or post.author_email == current_user.email %}
                                     <form action="{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}" method="POST" style="display:inline;">
-                                        <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
+                                        <button type="button" class="btn btn-danger" onclick="confirmDeleteReply('{{ url_for('delete_reply', post_id=post.post_id, comment_id=comment.comment_id, reply_id=reply.reply_id) }}')">حذف الرد</button>
                                     </form>
                                 {% endif %}
                             </li>
