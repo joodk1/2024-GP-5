@@ -13,22 +13,26 @@
             return;
         }
 
-        const referrer = document.referrer; 
-        const myProfileUrl = "{{ url_for('profile') }}"; 
-        const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
-        const LikedPostsUrl = "{{ url_for('liked_posts') }}"; 
+   const referrer = document.referrer; 
+   const myProfileUrl = "{{ url_for('profile') }}"; 
+   const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
+   const LikedPostsUrl = "{{ url_for('liked_posts') }}"; 
+   const profileWithFilterPattern = new RegExp(`${myProfileUrl}\\?filter=liked_posts`);
 
-        if (referrer && profilePagePattern.test(referrer)) {
-            window.location.href = referrer; 
-        } else if (referrer && referrer.includes(myProfileUrl)) {
-            window.location.href = myProfileUrl;
-        } else if (referrer && referrer.includes(LikedPostsUrl)) {
-            window.location.href = LikedPostsUrl;}
-            else {
-            let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
-            window.location.href = feedUrlWithFilter;
-        }
-    }
+   if (referrer && profileWithFilterPattern.test(referrer)) {
+       window.location.href = referrer;
+   } else if (referrer && profilePagePattern.test(referrer)) {
+       window.location.href = myProfileUrl;}
+   else if (referrer && referrer.includes(myProfileUrl)) {
+       window.location.href = myProfileUrl;
+   } else if (referrer && referrer.includes(LikedPostsUrl)) {
+       window.location.href = LikedPostsUrl;
+   } else {
+       let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+       window.location.href = feedUrlWithFilter;
+   }}
+    
+
     
  
     function toggleReplyForm(commentId, authorName) {

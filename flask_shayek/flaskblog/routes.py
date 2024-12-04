@@ -26,7 +26,7 @@ from PIL import Image
 from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -574,8 +574,20 @@ def profile():
 
     username = list(user_ref.values())[0].get('username')
     posts = fetch_posts_by_user(user_email)
-    liked_posts = fetch_liked_posts(user_email)
     
+    filter_type = request.args.get('filter', 'my_posts')  
+
+    if user_type == 'newsoutlet':
+        if filter_type == 'my_posts':
+            posts = fetch_posts_by_user(user_email)
+            liked_posts = [] 
+        elif filter_type == 'liked_posts':
+            posts = []  
+            liked_posts = fetch_liked_posts(user_email)
+    else:
+        posts = fetch_posts_by_user(user_email)
+        liked_posts = fetch_liked_posts(user_email)
+
     followed_news_outlets = []
     followed_users_ref = db.reference('follows').order_by_child('member_id').equal_to(current_user.email).get()
 
@@ -614,20 +626,22 @@ def profile():
 
                                 if follower_username != username:
                                     followers_usernames.append(follower_username)
+        
+
 
         return render_template('newsoutlet_myprofile.html', 
                             user_info=username, 
                             followers=followers_usernames, 
                             followed_news_outlets=followed_news_outlets, 
                             posts=posts,
-                            liked_posts=liked_posts)
+                            liked_posts=liked_posts,
+                            filter=filter_type) 
 
     return render_template(
         'member_myprofile.html',
         user_info=username,
         followed_news_outlets=followed_news_outlets,
-        liked_posts=liked_posts
-    )
+        liked_posts=liked_posts)
 
 @app.route('/profile/<username>')
 def user_profile(username):
