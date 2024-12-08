@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model # type: ignore
-import dlib
+from tensorflow.keras.preprocessing import image
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import uuid
@@ -26,16 +26,13 @@ from PIL import Image
 from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/noraaziz/Desktop/Delivery/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
 })
 firebase_database = db.reference()
 
-detector = dlib.get_frontal_face_detector()
-
-# Loading both models
 def get_model_paths():
     current_dir = os.path.dirname(__file__)
     deepfake_model_path = os.path.join(current_dir, 'ResNet50_Model_DF.h5')
@@ -45,6 +42,7 @@ def get_model_paths():
 deepfake_model_path, faceswap_model_path = get_model_paths()
 deepfake_model = load_model(deepfake_model_path)
 faceswap_model = load_model(faceswap_model_path)
+
     
 UPLOAD_FOLDER = 'uploads'
 STAMPED_FOLDER = 'flaskblog/static/stamped/'
@@ -155,14 +153,41 @@ def homepage():
 def about():
     return render_template('about.html', title = 'من نحن؟')
 
-def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):
+def load_opencv_face_detector():
+    model_path = "deploy.prototxt"
+    weights_path = "res10_300x300_ssd_iter_140000_fp16.caffemodel"
+    net = cv2.dnn.readNetFromCaffe(model_path, weights_path)
+    return net
+
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+
+def detect_faces_with_haar(frame, conf_threshold=0.5):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    return faces
+
+
+def preprocess_face(face, target_size=(299, 299)):
+    face = cv2.resize(face, target_size) 
+    face = np.expand_dims(face, axis=0)  
+    face = face / 255.0  
+    return face
+
+
+def predict_face(face, model):
+    prediction = model.predict(face)
+    return prediction
+
+
+def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):  
     cap = cv2.VideoCapture(video_path)
     frames = []
     processed_frames = []
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     step = max(1, frame_count // max_frames)
     blank_frame_count = 0
-    max_blank_frames=4
+    max_blank_frames = 4
 
     for i in range(0, frame_count, step):
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
@@ -173,19 +198,18 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
             break
 
     for frame in frames:
-        detected_faces = detector(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
-        
-        if detected_faces:
-            face = detected_faces[0]
-            x1, y1, x2, y2 = face.left(), face.top(), face.right(), face.bottom()
-            cropped_face = frame[y1:y2, x1:x2]
-            resized_face = cv2.resize(cropped_face, target_size)
+        detected_faces = detect_faces_with_haar(frame)
+
+        if len(detected_faces) > 0: 
+            x1, y1, w, h = detected_faces[0]
+            cropped_face = frame[max(0, y1):y1+h, max(0, x1):x1+w]
+            resized_face = cv2.resize(cropped_face, target_size) 
             processed_frames.append(resized_face)
             blank_frame_count = 0
         else:
             processed_frames.append(np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8))
-            blank_frame_count += 1 
-            
+            blank_frame_count += 1
+
             if blank_frame_count > max_blank_frames:
                 global global_code
                 global_code = 0
@@ -215,11 +239,9 @@ def shayekModel():
                     return jsonify({'error': 'لم نجد أي أوجه في الفيديو المرفق', 'code': 0, 'video_path': video.filename})
                 processed_frames = np.expand_dims(processed_frames, axis=0)
 
-                # Making predictions using both models:
                 deepfake_pred = deepfake_model.predict(processed_frames)[0][0]
                 faceswap_pred = faceswap_model.predict(processed_frames)[0][0]
 
-                # If either model predicts as manipulated, classify as so
                 if deepfake_pred >= 0.5 or faceswap_pred >= 0.5:
                     pred_label = 'الفيديو معدل'
                     global_code = 2 

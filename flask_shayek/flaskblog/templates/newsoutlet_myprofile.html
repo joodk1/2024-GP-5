@@ -120,7 +120,11 @@
                         </div>
                         <div class="form-group">
                             <label for="post-media">الوسائط</label>
-                            <input type="file" class="form-control-file" id="post-media" name="media">
+                            <br>
+                            <label class="custom-file-upload">
+                                <input type="file" name="video" accept="video/*" required onchange="showFileName()">اختيار ملف
+                            </label>
+                            <span id="fileName"></span>
                         </div>
                     </div>
                     <div class="modal-footer">

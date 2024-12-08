@@ -26,80 +26,65 @@
 <body>
     <header class="site-header">
         <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
-            <div class="container">
-                <a class="navbar-brand" href="/">
-                    <img src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;">
-                </a>
-                <!-- Toggler Button -->
+            <div class="container d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    {% if session['logged_in'] == True %}
+                        <a class="nav-item nav-link" href="{{ url_for('logout') }}" >تسجيل الخروج</a>
+                    {% else %}
+                        <a class="nav-item nav-link" href="{{ url_for('member_register') }}">مستخدم جديد</a>
+                        <a class="nav-item nav-link" href="{{ url_for('member_login') }}">تسجيل الدخول</a>
+                    {% endif %}
+                </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-        
-                <!-- Collapsible Content -->
-                <div class="collapse navbar-collapse" id="navbarToggle">
-                    <!-- Left Aligned Links -->
-                    <ul class="navbar-nav ml-auto">
-                        {% if session['logged_in'] %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('logout') }}">تسجيل الخروج</a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('member_register') }}">مستخدم جديد</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('member_login') }}">تسجيل الدخول</a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('about') }}">من نحن؟</a>
-                        </li>
-                        {% if session['logged_in'] %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('home') }}" onclick="goToHome()">الرئيسية</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('profile') }}">حسابي</a>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-        
-                    <!-- Notifications Dropdown -->
-                    {% if session['logged_in'] %}
-                    <div class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="notificationsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            الإشعارات
-                            {% if unread_count > 0 %}
-                                <span class="badge badge-danger notification-count">{{ unread_count }}</span>
-                            {% endif %}
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationsDropdown">
-                            {% if notifications %}
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbarToggle">
+                <div class="ml-auto d-flex align-items-center">
+                    <a class="nav-item nav-link" href="{{ url_for('shayekModel') }}">نشيّك؟</a>
+                    <a class="nav-item nav-link" href="{{ url_for('about') }}">من نحن؟</a>
+                    {% if session['logged_in'] == True %}
+                        <a class="nav-item nav-link" href="{{ url_for('home') }}" onclick="goToHome()">الرئيسية</a>
+                        <a class="nav-item nav-link" href="{{ url_for('profile') }}">حسابي</a>
+                        <!-- Notifications-->
+                        <div class="nav-item dropdown" id="notificationsDropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                الإشعارات
+                                {% if unread_count > 0 %}
+                                    <span class="badge badge-danger notification-count position-absolute" style="top: 12px; right: 15px;">{{ unread_count }}</span>
+                                {% endif %}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right custom-notification-menu" aria-labelledby="notificationsDropdown">
+                                {% if notifications %}
                                 <ul class="list-group">
                                     {% for notification in notifications %}
-                                    <li class="list-group-item">
-                                        <p>نشرة جديدة من {{ notification.newsoutlet }}</p>
-                                        <p>{{ notification.post_title }}</p>
-                                        <p>{{ notification.timestamp }}</p>
+                                    <li class="list-group-item notification-item {% if not notification.is_read %} unread-notification {% endif %}" data-href="{{ url_for('post', post_id=notification.post_id) }}" style="cursor: pointer;">
+                                        <!-- Notification content -->
+                                        <div class="notification-content">
+                                            <p>نشرة جديدة من {{ notification.newsoutlet }}</p>
+                                            <p>بعنوان: {{ notification.post_title }}</p>
+                                            <p>{{ notification.timestamp }}</p>
+                                        </div>   
+                                        <!-- Delete button-->
+                                        <div class="float-right">
+                                            <button class="btn btn-sm btn-danger delete-notification-btn" onclick="deleteNotification('{{ notification.notification_key }}', event)">حذف</button>
+                                        </div>
                                     </li>
                                     {% endfor %}
-                                </ul>
-                            {% else %}
-                                <p class="dropdown-item">لايوجد إشعارات</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                                </ul>                        
+                                {% else %}
+                                    <p class="dropdown-item">لايوجد إشعارات</p>
+                                {% endif %}
+                            </div>
+                        </div>                
+                    {% else %}
+                        <a class="nav-item nav-link" href="{{ url_for('homepage') }}">الرئيسية</a>
                     {% endif %}
+                    <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
                 </div>
             </div>
-        </nav>        
+        </nav>
     </header>
 
     <main role="main" class="container">
