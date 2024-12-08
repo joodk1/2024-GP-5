@@ -23,17 +23,9 @@
                     {% if post.media %}
                         {% set file_ext = post.media.split('.')[-1].lower() %}
                         {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                            <video class="post-video" controls>
-                                {% if file_ext == 'mp4' %}
-                                    <source src="{{ post.media }}" type="video/mp4">
-                                {% elif file_ext == 'webm' %}
-                                    <source src="{{ post.media }}" type="video/webm">
-                                {% elif file_ext == 'ogg' %}
-                                    <source src="{{ post.media }}" type="video/ogg">
-                                {% elif file_ext == 'mov' %}
-                                    <source src="{{ post.media }}" type="video/quicktime">
-                                {% endif %}
-                            </video>
+                    <video class="post-video" controls>
+                        <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                    </video>
                         {% else %}
                             <img class="post-image" src="{{ post.media }}" alt="الوسائط">
                         {% endif %}

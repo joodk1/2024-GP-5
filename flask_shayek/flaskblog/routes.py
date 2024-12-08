@@ -18,15 +18,15 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model # type: ignore
-from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing import image # type: ignore
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import uuid
 from PIL import Image
-from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip
+from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip # type: ignore
 
 # Firebase Admin SDK Initialization
-cred = credentials.Certificate('/Users/lamiafa/Downloads/shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
+cred = credentials.Certificate(r'C:\Users\huaweii\Downloads\shayek-560ec-firebase-adminsdk-b0vzc-d1533cb95f.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://shayek-560ec-default-rtdb.firebaseio.com/',
     'storageBucket': 'shayek-560ec.appspot.com'
@@ -48,6 +48,8 @@ UPLOAD_FOLDER = 'uploads'
 STAMPED_FOLDER = 'flaskblog/static/stamped/'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(STAMPED_FOLDER, exist_ok=True)
+
+global_code = None
 
 def parse_timestamp(timestamp):
     try:
@@ -161,12 +163,10 @@ def load_opencv_face_detector():
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-
 def detect_faces_with_haar(frame, conf_threshold=0.5):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     return faces
-
 
 def preprocess_face(face, target_size=(299, 299)):
     face = cv2.resize(face, target_size) 
@@ -174,11 +174,9 @@ def preprocess_face(face, target_size=(299, 299)):
     face = face / 255.0  
     return face
 
-
 def predict_face(face, model):
     prediction = model.predict(face)
     return prediction
-
 
 def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 299)):  
     cap = cv2.VideoCapture(video_path)
@@ -217,8 +215,6 @@ def extract_and_preprocess_frames(video_path, max_frames=10, target_size=(299, 2
 
     cap.release()
     return np.array(processed_frames)
-
-global_code = None
 
 @app.route('/shayekModel', methods=['GET', 'POST'])
 def shayekModel():

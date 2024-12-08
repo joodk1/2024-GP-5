@@ -1,18 +1,104 @@
-{% extends "layout.html" %}
-{% block content %}
-<div class="content-section">
-    {% for key, request in requests.items() %}
-    <div>
-        <p><strong>اسم المتقدم بالطلب:</strong> {{ request['username'] }}</p>
-        <p><strong>البريد الالكتروني:</strong> {{ request['email'] }}</p>
-        <p><strong>اسم المنصة:</strong> {{ request['company_name'] }}</p>
-        <p><strong>الملفات المرفقة:</strong> <a href="{{ request['company_docs_url'] }}" target="_blank">تنزيل المرفقات</a></p>
-        <form action="{{ url_for('verify_request', request_id=key) }}" method="post" class="admin-form">
-            <button type="submit" name="decline" class="btn">رفض</button>
-            <button type="submit" name="accept" class="btn">قبول</button>
-        </form>
-        <hr>
-    </div>
-    {% endfor %}
-</div>
-{% endblock content %}
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    {% if title %}
+    <title>شيّـــك - {{ title }}</title>
+    {% else %}
+    <title>شيّـــك</title>
+    {% endif %}
+    
+    <link rel="icon" type="image/png" href="/static/Images/Shayek_logo.png">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+            <div class="container d-flex justify-content-between align-items-center">
+                {% if session['logged_in'] == True %}
+                    <a class="nav-item nav-link" href="{{ url_for('logout') }}" >تسجيل الخروج</a>
+                {% else %}
+                    <a class="nav-item nav-link" href="{{ url_for('adminlogin') }}">تسجيل الدخول</a>
+                {% endif %}
+                <div class="d-flex align-items-center">
+                    <a class="navbar-brand mr-4" href="/"><img class="logo" src="/static/Images/Shayek_logo.png" alt="شيّـــك" style="width: 180px;"></a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="container">
+        <div class="row">
+            <div class="col-12">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message|safe }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <div class="content-section">
+                    {% if requests %}
+                        {% for key, request in requests.items() %}
+                            <div>
+                                <p><strong>اسم المتقدم بالطلب:</strong> {{ request['username'] }}</p>
+                                <p><strong>البريد الالكتروني:</strong> {{ request['email'] }}</p>
+                                <p><strong>اسم المنصة:</strong> {{ request['company_name'] }}</p>
+                                <p><strong>الملفات المرفقة:</strong> <a href="{{ request['company_docs_url'] }}" target="_blank">تنزيل المرفقات</a></p>
+                                <form action="{{ url_for('verify_request', request_id=key) }}" method="post" class="admin-form">
+                                    <button type="submit" name="decline" class="btn">رفض</button>
+                                    <button type="submit" name="accept" class="btn">قبول</button>
+                                </form>
+                                <hr>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="alert text-center">لا توجد طلبات جديدة في الوقت الحالي</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>   
+
+    <footer class="footer mt-auto py-3">
+        <div class="container text-center" style="direction: rtl;">
+            <span>للاستفارات والاقتراحات، تواصلوا معنا عبر البريد الإلكتروني: shayekgp1@gmail.com</span>
+        </div>
+    </footer>
+
+    <script>  
+        var firebaseConfig = {
+            apiKey: "AIzaSyAXgzwyWNcfI-QSO_IbBVx9luHc9zOUzeY",
+            authDomain: "shayek-560ec.firebaseapp.com",
+            databaseURL: "https://shayek-560ec-default-rtdb.firebaseio.com",
+            projectId: "shayek-560ec",
+            storageBucket: "shayek-560ec.appspot.com",
+            messagingSenderId: "377837381829",
+            appId: "1:377837381829:web:d6594a9e9f6af83c1468ac",
+            measurementId: "G-PKCVFN45WE"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        var firestore = firebase.firestore();
+ 
+        function goToHome() {
+            sessionStorage.clear();
+        }
+
+    </script>    
+</body>
+</html>
