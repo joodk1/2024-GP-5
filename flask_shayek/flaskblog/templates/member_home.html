@@ -72,28 +72,37 @@
                 this.classList.add('green-button');
             });
         });
-        const scrollPosition = sessionStorage.getItem('scrollPosition');
-    if (scrollPosition) {
-        window.scrollTo(0, scrollPosition);
-        sessionStorage.removeItem('scrollPosition'); 
-    }
+    
     buttons.forEach(button => {
     button.addEventListener('click', function() {
         const selectedFilter = this.dataset.filter;
         storeFilter(selectedFilter); });});
 
-        function storeScrollPosition() {
-    sessionStorage.setItem('scrollPosition', window.scrollY);
-}
+       
 function storeFilter(filter) {
 sessionStorage.setItem('filter', filter);}
 window.location.href = "{{ url_for('home', filter='') }}" + filter;});
 
 
-window.addEventListener('beforeunload', function () {
-    sessionStorage.setItem('scrollPosition', window.scrollY);
-});
+document.addEventListener('DOMContentLoaded', function () {
+    const currentPage = "{{ member_home }}"; 
+    const scrollKey = `scrollPosition_${currentPage}`;
 
+    const scrollPosition = sessionStorage.getItem(scrollKey);
+    if (scrollPosition) {
+        window.scrollTo(0, scrollPosition);
+        sessionStorage.removeItem(scrollKey); 
+    }
+    function storeScrollPosition() {
+    sessionStorage.setItem(scrollKey, window.scrollY);
+}
+const authorLinks = document.querySelectorAll('.article-metadata h5 a');
+    authorLinks.forEach(link => {
+        link.addEventListener('click', storeScrollPosition);
+    });
+
+window.addEventListener('beforeunload', storeScrollPosition);
+});
 
     function toggleLike(button) {
         const postId = button.getAttribute('data-post-id');
@@ -123,6 +132,7 @@ window.addEventListener('beforeunload', function () {
         .catch(error => console.error('Error:', error));
     }
 </script>
+
 
 {% if posts %}    
     {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}

@@ -13,24 +13,28 @@
             return;
         }
 
-   const referrer = document.referrer; 
-   const myProfileUrl = "{{ url_for('profile') }}"; 
-   const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
-   const LikedPostsUrl = "{{ url_for('liked_posts') }}"; 
-   const profileWithFilterPattern = new RegExp(`${myProfileUrl}\\?filter=liked_posts`);
+     const referrer = document.referrer; 
+     const myProfileUrl = "{{ url_for('profile') }}"; 
+     const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
+     const likedPostsUrl = "{{ url_for('liked_posts') }}"; 
+     const profileWithFilterPattern = new RegExp(`${myProfileUrl}\\?filter=liked_posts`);
 
-   if (referrer && profileWithFilterPattern.test(referrer)) {
-       window.location.href = referrer;
-   } else if (referrer && profilePagePattern.test(referrer)) {
-       window.location.href = myProfileUrl;}
-   else if (referrer && referrer.includes(myProfileUrl)) {
+     if (referrer && profilePagePattern.test(referrer) && !referrer.includes(myProfileUrl + "?filter=")) {
+    window.location.href = referrer;
+    } else if (referrer && profileWithFilterPattern.test(referrer)) {
+    window.location.href = referrer;
+    } else if (referrer && profilePagePattern.test(referrer)) {
+    window.location.href = myProfileUrl;
+    } else if (referrer && referrer.includes(myProfileUrl)) {
        window.location.href = myProfileUrl;
-   } else if (referrer && referrer.includes(LikedPostsUrl)) {
-       window.location.href = LikedPostsUrl;
-   } else {
-       let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
-       window.location.href = feedUrlWithFilter;
-   }}
+    } else if (referrer && referrer.includes(likedPostsUrl)) {
+    window.location.href = likedPostsUrl;
+    } else {
+    let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+    window.location.href = feedUrlWithFilter;
+    }
+    }
+    
     
     function toggleReplyForm(commentId, authorName) {
         const replyForm = document.getElementById(`reply-form-${commentId}`);

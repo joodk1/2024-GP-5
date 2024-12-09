@@ -51,18 +51,37 @@
         .catch(error => console.error('Error:', error));
     }
     
-    
     document.addEventListener("DOMContentLoaded", function () {
-        const scrollPosition = sessionStorage.getItem("scrollPosition");
-        if (scrollPosition) {
-            window.scrollTo(0, parseInt(scrollPosition));
-            sessionStorage.removeItem("scrollPosition");
-        }
-        window.addEventListener("beforeunload", function () {
-            sessionStorage.setItem("scrollPosition", window.scrollY);
+        if (!sessionStorage.getItem("isCurrentPage")) {
+                sessionStorage.removeItem("scrollPosition");
+            }
+        
+            // Mark this page as the current one
+            sessionStorage.setItem("isCurrentPage", "true");
+        
+            const scrollPosition = sessionStorage.getItem("scrollPosition");
+            if (scrollPosition) {
+                window.scrollTo(0, parseInt(scrollPosition)); 
+                sessionStorage.removeItem("scrollPosition"); 
+            } else {
+                window.scrollTo(0, 0); 
+            }
+        
+            function storeScrollPosition() {
+                sessionStorage.setItem('scrollPosition', window.scrollY); 
+            }
+        
+            window.addEventListener("beforeunload", function () {
+                sessionStorage.setItem("scrollPosition", window.scrollY); 
+            });
+        
+            
+            window.addEventListener("unload", function () {
+                sessionStorage.removeItem("isCurrentPage");
+            });
         });
-    });
     </script>
+    
 <div class="container mt-5">
     <!-- User Information Card -->
     <div class="card mb-4">

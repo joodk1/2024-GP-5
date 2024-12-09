@@ -113,30 +113,41 @@
                 this.classList.add('green-button');
             });
         });
-        const scrollPosition = sessionStorage.getItem('scrollPosition');
+   
+    buttons.forEach(button => {
+    button.addEventListener('click', function() {
+        const selectedFilter = this.dataset.filter;
+        storeFilter(selectedFilter); });});
+
+function storeFilter(filter) {
+sessionStorage.setItem('filter', filter);}
+window.location.href = "{{ url_for('home', filter='') }}" + filter;});
+
+
+// Restore scroll position specific to the current page
+document.addEventListener('DOMContentLoaded', function () {
+    const currentPage = "{{ newsoutlet_home }}"; 
+    const scrollKey = `scrollPosition_${currentPage}`;
+
+    const scrollPosition = sessionStorage.getItem(scrollKey);
     if (scrollPosition) {
         window.scrollTo(0, scrollPosition);
-        sessionStorage.removeItem('scrollPosition'); 
+        sessionStorage.removeItem(scrollKey); 
     }
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            const selectedFilter = this.dataset.filter;
-            storeFilter(selectedFilter);
-        });
+
+
+function storeScrollPosition() {
+    sessionStorage.setItem(scrollKey, window.scrollY);
+}
+
+const authorLinks2 = document.querySelectorAll('.article-metadata h5 a');
+    authorLinks2.forEach(link => {
+        link.addEventListener('click', storeScrollPosition);
     });
 
-        function storeScrollPosition() {
-        sessionStorage.setItem('scrollPosition', window.scrollY);
-    }
 
-    function storeFilter(filter) {
-    sessionStorage.setItem('filter', filter);
-    }
-
-    window.location.href = "{{ url_for('home', filter='') }}" + filter;});
-    window.addEventListener('beforeunload', function () {
-        sessionStorage.setItem('scrollPosition', window.scrollY);
-    });
+window.addEventListener('beforeunload', storeScrollPosition);
+});
 
     function toggleLike(button) {
         const postId = button.getAttribute('data-post-id');
@@ -165,7 +176,7 @@
         })
         .catch(error => console.error('Error:', error));
     }
-</script>  
+</script> 
 
 {% if posts %}
     {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}

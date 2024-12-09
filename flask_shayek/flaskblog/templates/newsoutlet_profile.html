@@ -1,8 +1,45 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<div id="auth-status" data-authenticated="{% if current_user.is_authenticated %}true{% else %}false{% endif %}"></div>
 <div class="container mt-5">
+    <button onclick="goBack()" class="btn form-buttons">&#8592; عودة </button>
     <div class="card mb-4">
+<script>
+    const feedUrl = "{{ url_for('home', filter=filter) }}"; 
+    const isAuthenticated = document.getElementById('auth-status').getAttribute('data-authenticated') === 'true';
+    const storedFilter = sessionStorage.getItem('filter') || 'followed';
+
+    function goBack() {
+        if (!isAuthenticated) {
+            window.history.back();
+            return;
+        }
+        const referrer = document.referrer; 
+        const myProfileUrl = "{{ url_for('profile') }}"; 
+        const profilePagePattern = new RegExp(`${myProfileUrl}/[^/]+$`); 
+        const likedPostsUrl = "{{ url_for('liked_posts') }}"; 
+        const profileWithFilterPattern = new RegExp(`${myProfileUrl}\\?filter=liked_posts`);
+        
+
+if (referrer && profilePagePattern.test(referrer) && !referrer.includes(myProfileUrl + "?filter=")) {
+    window.location.href = referrer; 
+} else if (referrer && profileWithFilterPattern.test(referrer)) {
+    window.location.href = referrer;
+} else if (referrer && profilePagePattern.test(referrer)) {
+    window.location.href = myProfileUrl;
+} else if (referrer && referrer.includes(myProfileUrl)) {
+       window.location.href = myProfileUrl;
+} else if (referrer && referrer.includes(likedPostsUrl)) {
+    window.location.href = likedPostsUrl;
+} else if (referrer && referrer.includes('/post')) {
+    window.location.href = referrer; 
+} else {
+    let feedUrlWithFilter = "{{ url_for('home', filter='') }}" + storedFilter;
+    window.location.href = feedUrlWithFilter;
+}
+    }
+    </script>
         <div class="card-header">
             <h4>معلومات المنصة الإعلامية</h4>
         </div>
@@ -75,7 +112,7 @@
         </div>
         <div class="mb-1"></div>
         {% for post in posts %}
-            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+            <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;" onclick="storeScrollPosition()">
                 <div class="media-body">
                     <div class="article-metadata text-right">
                         <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
@@ -103,7 +140,7 @@
                         {% endif %}
                     </p>
                     <div class="post-comments">
-                        <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                        <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'" >
                             <i class="far fa-comment"></i>
                             <span>{{ post.count }}</span> </button>
                     
@@ -284,14 +321,18 @@
             .catch(error => console.error('Error:', error));
         }
         document.addEventListener("DOMContentLoaded", function () {
-        const scrollPosition = sessionStorage.getItem("scrollPosition");
-        if (scrollPosition) {
-            window.scrollTo(0, parseInt(scrollPosition));
-            sessionStorage.removeItem("scrollPosition");
-        }
-        window.addEventListener("beforeunload", function () {
-            sessionStorage.setItem("scrollPosition", window.scrollY);
-        });
+            function storeScrollPosition() {
+                sessionStorage.setItem('scrollPosition', window.scrollY); 
+            }
+        
+            window.addEventListener("beforeunload", function () {
+                sessionStorage.setItem("scrollPosition", window.scrollY); 
+            });
+        
+            
+            window.addEventListener("unload", function () {
+                sessionStorage.removeItem("isCurrentPage");
+            });
     });
 </script>
 {% endblock %}
