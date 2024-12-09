@@ -51,38 +51,72 @@
         .catch(error => console.error('Error:', error));
     }
 
-            document.addEventListener('DOMContentLoaded', function () {
+    function showFileName() {
+        const fileInput = document.querySelector('input[type="file"]');
+        const fileName = fileInput.files[0] ? fileInput.files[0].name : '';
+        const previewContainer = document.getElementById('filePreview');
+        const preview = document.createElement('div');
 
-                if (!sessionStorage.getItem("isCurrentPage")) {
-                sessionStorage.removeItem("scrollPosition");
-            }
-        
-            // Mark this page as the current one
-            sessionStorage.setItem("isCurrentPage", "true");
-        
-            const scrollPosition = sessionStorage.getItem("scrollPosition");
-            if (scrollPosition) {
-                window.scrollTo(0, parseInt(scrollPosition)); 
-                sessionStorage.removeItem("scrollPosition"); 
+        // Clear previous content
+        document.getElementById('fileName').innerText = fileName;
+        previewContainer.innerHTML = '';
+
+        if (fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const fileURL = URL.createObjectURL(file);
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = fileURL;
+                img.alt = fileName;
+                img.style.maxWidth = '200px';
+                img.style.marginTop = '10px';
+                preview.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = fileURL;
+                video.controls = true;
+                video.style.maxWidth = '200px';
+                video.style.marginTop = '10px';
+                preview.appendChild(video);
             } else {
-                window.scrollTo(0, 0); 
+                preview.innerText = 'Preview not available for this file type.';
             }
-        
-            function storeScrollPosition() {
-                sessionStorage.setItem('scrollPosition', window.scrollY); 
-            }
-        
-            window.addEventListener("beforeunload", function () {
-                sessionStorage.setItem("scrollPosition", window.scrollY); 
-            });
-        
-            
-            window.addEventListener("unload", function () {
-                sessionStorage.removeItem("isCurrentPage");
-            });
+
+            previewContainer.appendChild(preview);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        if (!sessionStorage.getItem("isCurrentPage")) {
+            sessionStorage.removeItem("scrollPosition");
+        }
+
+        // Mark this page as the current one
+        sessionStorage.setItem("isCurrentPage", "true");
+
+        const scrollPosition = sessionStorage.getItem("scrollPosition");
+        if (scrollPosition) {
+            window.scrollTo(0, parseInt(scrollPosition)); 
+            sessionStorage.removeItem("scrollPosition"); 
+        } else {
+            window.scrollTo(0, 0); 
+        }
+
+        function storeScrollPosition() {
+            sessionStorage.setItem('scrollPosition', window.scrollY); 
+        }
+
+        window.addEventListener("beforeunload", function () {
+            sessionStorage.setItem("scrollPosition", window.scrollY); 
         });
-    
-   
+
+        
+        window.addEventListener("unload", function () {
+            sessionStorage.removeItem("isCurrentPage");
+        });
+    });   
 </script>
 <div class="container mt-5">
     <div class="card mb-4">
@@ -153,9 +187,10 @@
                             <label for="post-media">الوسائط</label>
                             <br>
                             <label class="custom-file-upload">
-                                <input type="file" name="file" accept="*/*" onchange="showFileName()">اختيار ملف
+                                <input type="file" class="form-control-file" id="post-media" name="media" accept="*/*" onchange="showFileName()">اختيار ملف
                             </label>
                             <span id="fileName"></span>
+                            <div id="filePreview" style="margin-top: 10px;"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -167,7 +202,6 @@
         </div>
     </div>
     
-
     <!-- Filter Buttons -->
     <div class="d-flex justify-content-center">
         <div class="btn-group" role="group" aria-label="Post Filter">
@@ -191,69 +225,66 @@
         </div>
         <div class="mb-1"></div>
         {% for post in posts %}
-        {% if post.author == user_info %}
-        <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
-            <div class="media-body">
-                <div class="article-metadata text-right">
-                    <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                    <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
-                        <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
-                    <script>
-                        function confirmDelete(button) {
-                            event.stopPropagation();
-                            if (confirm('متأكد من حذف النشرة؟')) {
-                                button.parentElement.submit();
-                            }
-                        }
-                    </script>
-                    <small class="text-muted">{{ post.timestamp }}</small>
-                </div> 
-                <br>
-                <h3 class="article-title">{{ post.title }}</h3>
-                <p class="article-content">{{ post.content }}
-                    {% if post.media %}
-                        {% set file_ext = post.media.split('.')[-1].lower() %}
-                        {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
-                            <video class="post-video" controls>
-                                <source src="{{ post.media }}" type="video/{{ file_ext }}">
-                            </video>
-                        {% else %}
-                            <img class="post-image" src="{{ post.media }}" alt="الوسائط">
-                        {% endif %}
-                    {% endif %}
-                </p>
+            {% if post.author == user_info %}
+                <article class="media content-section" onclick="location.href='{{ url_for('post', post_id=post.post_id) }}';" style="cursor: pointer;">
+                    <div class="media-body">
+                        <div class="article-metadata text-right">
+                            <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                            <form action="{{ url_for('delete_post', post_id=post.post_id) }}" method="post" style="display: inline;">
+                                <button type="button" class="delete-icon-btn" onclick="confirmDelete(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            <script>
+                                function confirmDelete(button) {
+                                    event.stopPropagation();
+                                    if (confirm('متأكد من حذف النشرة؟')) {
+                                        button.parentElement.submit();
+                                    }
+                                }
+                            </script>
+                            <small class="text-muted">{{ post.timestamp }}</small>
+                        </div> 
+                        <br>
+                        <h3 class="article-title">{{ post.title }}</h3>
+                        <p class="article-content">{{ post.content }}
+                            {% if post.media %}
+                                {% set file_ext = post.media.split('.')[-1].lower() %}
+                                {% if file_ext in ['mp4', 'webm', 'ogg', 'mov'] %}
+                                    <video class="post-video" controls>
+                                        <source src="{{ post.media }}" type="video/{{ file_ext }}">
+                                    </video>
+                                {% else %}
+                                    <img class="post-image" src="{{ post.media }}" alt="الوسائط">
+                                {% endif %}
+                            {% endif %}
+                        </p>
 
-                <div class="post-comments">
-                    <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                        <i class="far fa-comment"></i>
-                        <span>{{ post.count }}</span> </button>
-                
-                    <div style="margin-left: 5px;"></div>
-                    <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
-                        <i class="far fa-heart 
-                            {% if current_user.get_id() in post.liked_by %} 
-                                fas liked-heart 
-                            {% endif %}"></i> 
-                        <span>{{ post.likes }}</span>
-                    </button>
+                        <div class="post-comments">
+                            <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                                <i class="far fa-comment"></i>
+                                <span>{{ post.count }}</span> </button>
+                        
+                            <div style="margin-left: 5px;"></div>
+                            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                                <i class="far fa-heart 
+                                    {% if current_user.get_id() in post.liked_by %} 
+                                        fas liked-heart 
+                                    {% endif %}"></i> 
+                                <span>{{ post.likes }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+                {% endif %} 
+            {% else %}
+                <div class="card mb-4 ">
+                    <div class="card-body">
+                        <h5>لا توجد منشورات</h5>
+                    </div>
                 </div>
-            </div>
-        </article>
-        {% else %}
-<div class="card mb-4 ">
-<div class="card-header">
-    <h4>المنشورات</h4>
-</div>    
-<div class="card-body">
-    <h5>لا توجد منشورات</h5>
-</div>
-</div>
-{% endif %} 
-{% endfor %}
-{% endif %} 
+        {% endfor %}
+    {% endif %} 
 
     {% if filter == 'liked_posts' %}
         <div class="card mb-4 card-header">
@@ -261,49 +292,50 @@
         </div>
         <div class="mb-1"></div>
      
-            {% set max_visible_posts = 4 %}
-            {% for post in liked_posts[:max_visible_posts] %}
-                <article class="media content-section">
-                    <div class="media-body">
-                        <div class="article-metadata text-right">
-                            {% if post.author %}
-                                <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
-                            {% endif %}
-                            <small class="text-muted">{{ post.timestamp }}</small>
-                        </div> 
-                        <br>     
-                        <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
-                            <h3 class="article-title">{{ post.title }}</h3>
-                        </a>
-                    <div>
-                        <div class="post-comments">
-                            <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                                <i class="far fa-comment"></i>
-                                <span>{{ post.count }}</span> </button>
+        {% set max_visible_posts = 4 %}
+        {% for post in liked_posts[:max_visible_posts] %}
+            <article class="media content-section">
+                <div class="media-body">
+                    <div class="article-metadata text-right">
+                        {% if post.author %}
+                            <h5><a href="{{ url_for('user_profile', username=post.author) }}">{{ post.author }}</a></h5>
+                        {% endif %}
+                        <small class="text-muted">{{ post.timestamp }}</small>
+                    </div> 
+                    <br>     
+                    <a href="{{ url_for('post', post_id=post.post_id) }}" style="text-decoration: none; color: inherit;" onclick="storeScrollPosition()">
+                        <h3 class="article-title">{{ post.title }}</h3>
+                    </a>
+                <div>
+                    <div class="post-comments">
+                        <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                            <i class="far fa-comment"></i>
+                            <span>{{ post.count }}</span> </button>
 
-                            <div style="margin-left: 5px;"></div>
-                                <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
-                                    <i class="far fa-heart 
-                                        {% if current_user.get_id() in post.liked_by %} 
-                                            fas liked-heart 
-                                        {% endif %}"></i> 
-                                    <span>{{ post.likes }}</span>
-                                </button>
-                            </div>   </div> 
-                    </div>
-                </article>
-
-                {% if not loop.last %}
-                    <hr>
-                {% endif %}
-            {% endfor %}
-            
-            {% if liked_posts|length > max_visible_posts %}
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('liked_posts') }}" class="btn btn-link">عرض الكل</a>
+                        <div style="margin-left: 5px;"></div>
+                            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                                <i class="far fa-heart 
+                                    {% if current_user.get_id() in post.liked_by %} 
+                                        fas liked-heart 
+                                    {% endif %}"></i> 
+                                <span>{{ post.likes }}</span>
+                            </button>
+                        </div>   </div> 
                 </div>
-            {% endif %}
-        
-    </div>
+            </article>
+            {% else %}
+                <div class="card mb-4 ">
+                    <div class="card-body">
+                        <h5>لا توجد منشورات معجب بها</h5>
+                    </div>
+                </div>
+        {% endfor %}
+            
+        {% if liked_posts|length > max_visible_posts %}
+            <div class="text-center mt-3">
+                <a href="{{ url_for('liked_posts') }}" class="btn btn-link">عرض الكل</a>
+            </div>
+        {% endif %}  
+</div>
     {% endif %}
-    {% endblock %}
+{% endblock %}
