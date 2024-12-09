@@ -28,9 +28,10 @@
                         <label for="post-media">الوسائط</label>
                         <br>
                         <label class="custom-file-upload">
-                            <input type="file" name="file" accept="*/*" onchange="showFileName()">اختيار ملف
+                            <input type="file" class="form-control-file" id="post-media" name="media" accept="*/*" onchange="showFileName()">اختيار ملف
                         </label>
                         <span id="fileName"></span>
+                        <div id="filePreview" style="margin-top: 10px;"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -176,7 +177,43 @@ window.addEventListener('beforeunload', storeScrollPosition);
         })
         .catch(error => console.error('Error:', error));
     }
-</script> 
+
+    function showFileName() {
+        const fileInput = document.querySelector('input[type="file"]');
+        const fileName = fileInput.files[0] ? fileInput.files[0].name : '';
+        const previewContainer = document.getElementById('filePreview');
+        const preview = document.createElement('div');
+
+        // Clear previous content
+        document.getElementById('fileName').innerText = fileName;
+        previewContainer.innerHTML = '';
+
+        if (fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const fileURL = URL.createObjectURL(file);
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = fileURL;
+                img.alt = fileName;
+                img.style.maxWidth = '200px';
+                img.style.marginTop = '10px';
+                preview.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = fileURL;
+                video.controls = true;
+                video.style.maxWidth = '200px';
+                video.style.marginTop = '10px';
+                preview.appendChild(video);
+            } else {
+                preview.innerText = 'Preview not available for this file type.';
+            }
+
+            previewContainer.appendChild(preview);
+        }
+    }
+</script>  
 
 {% if posts %}
     {% for post in posts|sort(attribute='parsed_timestamp', reverse=True) %}
