@@ -260,34 +260,34 @@
                             {% endif %}
                         </p>
 
-                        <div class="post-comments">
-                            <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
-                                <i class="far fa-comment"></i>
-                                <span>{{ post.count }}</span> </button>
-                        
-                            <div style="margin-left: 5px;"></div>
-                            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
-                                <i class="far fa-heart 
-                                    {% if current_user.get_id() in post.liked_by %} 
-                                        fas liked-heart 
-                                    {% endif %}"></i> 
-                                <span>{{ post.likes }}</span>
-                            </button>
-                        </div>
-                    </div>
-                </article>
-            {% else %}
-                <div class="card mb-4 ">
-                    <div class="card-header">
-                        <h4>المنشورات</h4>
-                    </div>    
-                    <div class="card-body">
-                        <h5>لا توجد منشورات</h5>
-                    </div>
+                <div class="post-comments">
+                    <button class="comment-button" onclick="window.location.href='{{ url_for('post', post_id=post.post_id) }}'">
+                        <i class="far fa-comment"></i>
+                        <span>{{ post.count }}</span> </button>
+                
+                    <div style="margin-left: 5px;"></div>
+                    <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                        <i class="far fa-heart 
+                            {% if current_user.get_id() in post.liked_by %} 
+                                fas liked-heart 
+                            {% endif %}"></i> 
+                        <span>{{ post.likes }}</span>
+                    </button>
                 </div>
-            {% endif %} 
-        {% endfor %}
-    {% endif %} 
+            </div>
+        </article>
+        {% else %}
+<div class="card mb-4 ">
+<div class="card-header">
+    <h4>المنشورات</h4>
+</div>    
+<div class="card-body">
+    <h5>لا توجد منشورات</h5>
+</div>
+</div>
+{% endif %} 
+{% endfor %}
+{% endif %} 
 
     {% if filter == 'liked_posts' %}
         <div class="card mb-4 card-header">
@@ -315,22 +315,22 @@
                             <i class="far fa-comment"></i>
                             <span>{{ post.count }}</span> </button>
 
-                        <div style="margin-left: 5px;"></div>
-                            <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
-                                <i class="far fa-heart 
-                                    {% if current_user.get_id() in post.liked_by %} 
-                                        fas liked-heart 
-                                    {% endif %}"></i> 
-                                <span>{{ post.likes }}</span>
-                            </button>
-                        </div>   </div> 
-                </div>
-            </article>
+                            <div style="margin-left: 5px;"></div>
+                                <button class="like-button" data-post-id="{{ post.post_id }}" onclick="event.stopPropagation(); toggleLike(this)">
+                                    <i class="far fa-heart 
+                                        {% if current_user.get_id() in post.liked_by %} 
+                                            fas liked-heart 
+                                        {% endif %}"></i> 
+                                    <span>{{ post.likes }}</span>
+                                </button>
+                            </div>   </div> 
+                    </div>
+                </article>
 
-            {% if not loop.last %}
-                <hr>
-            {% endif %}
-        {% endfor %}
+                {% if not loop.last %}
+                    <hr>
+                {% endif %}
+            {% endfor %}
             
         {% if liked_posts|length > max_visible_posts %}
             <div class="text-center mt-3">
@@ -339,35 +339,4 @@
         {% endif %}  
 </div>
     {% endif %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            if (!sessionStorage.getItem("isCurrentPage")) {
-                sessionStorage.removeItem("scrollPosition");
-            }
-        
-            // Mark this page as the current one
-            sessionStorage.setItem("isCurrentPage", "true");
-        
-            const scrollPosition = sessionStorage.getItem("scrollPosition");
-            if (scrollPosition) {
-                window.scrollTo(0, parseInt(scrollPosition)); 
-                sessionStorage.removeItem("scrollPosition"); 
-            } else {
-                window.scrollTo(0, 0); 
-            }
-        
-            function storeScrollPosition() {
-                sessionStorage.setItem('scrollPosition', window.scrollY); 
-            }
-        
-            window.addEventListener("beforeunload", function () {
-                sessionStorage.setItem("scrollPosition", window.scrollY); 
-            });
-        
-            
-            window.addEventListener("unload", function () {
-                sessionStorage.removeItem("isCurrentPage");
-            });
-        });
-    </script>
-{% endblock %}
+    {% endblock %}
